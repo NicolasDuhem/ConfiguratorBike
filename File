@@ -369,6 +369,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <iframe name="hiddenCartFrame" style="display:none;"></iframe>
 
 <script>
 (function(){
@@ -378,7 +379,7 @@
   const PRODUCT_ID = 114;
 
   // Your storefront home page (redirect after add-to-cart success)
-  const HOME_URL = "%%GLOBAL_ShopPathSSL%%/";
+  const HOME_URL = "https://brompton-bicycle-limited-eu-sandbox-3.mybigcommerce.com/";
 
   // =========================
   // CONFIG DATA (UI only)
@@ -676,64 +677,27 @@
   // =========================
   // BIGCOMMERCE CART HELPERS
   // =========================
-  async function getExistingCartId(){
-    const res = await fetch("/api/storefront/carts", { credentials: "include" });
-    if (!res.ok) return null;
-    const carts = await res.json();
-    if (Array.isArray(carts) && carts.length > 0) return carts[0].id;
-    return null;
-  }
+  function submitCartForm(qty){
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/cart.php";
+    form.target = "hiddenCartFrame";
 
-  async function createCartWithItem(itemPayload){
-    const res = await fetch("/api/storefront/carts", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lineItems: { physicalItems: [itemPayload] } })
-    });
-    return res;
-  }
-
-  async function addItemToCart(cartId, itemPayload){
-    const res = await fetch(`/api/storefront/carts/${cartId}/items`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lineItems: { physicalItems: [itemPayload] } })
-    });
-    return res;
-  }
-
-  async function addToCart_B2B(productId, qty){
-    // Minimal payload (works for simple products)
-    const itemPayload = {
-      productId: Number(productId),
-      quantity: Number(qty)
-      // If Product 114 needs variants/modifiers, you MUST add:
-      // variantId: Number(123)
-      // OR optionSelections: [{ optionId: X, optionValue: Y }, ...]
+    const addInput = (name, value) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
     };
 
-    const existingCartId = await getExistingCartId();
+    addInput("action", "add");
+    addInput("product_id", String(PRODUCT_ID));
+    addInput("qty[]", String(qty));
 
-    let res;
-    if (!existingCartId){
-      res = await createCartWithItem(itemPayload);
-    }else{
-      res = await addItemToCart(existingCartId, itemPayload);
-    }
-
-    if (!res.ok){
-      const text = await res.text().catch(()=> "");
-      // Common failure: 422 missing option_id / option selections
-      throw new Error(
-        `Add-to-cart failed (HTTP ${res.status}).\n` +
-        `This usually means Product 114 requires a variant/options.\n\n` +
-        `Response: ${text || "(no body)"}`
-      );
-    }
-
-    return await res.json();
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
   }
 
   // =========================
@@ -786,7 +750,7 @@
     }
   });
 
-  els.btnOrder.addEventListener("click", async ()=>{
+  els.btnOrder.addEventListener("click", ()=>{
     const v = validateAndApplyConstraints();
     if (!v.ok){
       toast("Complete required selections before ordering.");
@@ -799,19 +763,11 @@
     els.btnOrder.disabled = true;
     els.btnOrder.textContent = "Ordering…";
 
-    try{
-      await addToCart_B2B(PRODUCT_ID, qty);
-
-      toast("Added to cart. Returning home…");
+    submitCartForm(qty);
+    toast("Added to cart. Returning home…");
+    setTimeout(() => {
       window.location.href = HOME_URL;
-    }catch(e){
-      console.error(e);
-      alert(e.message || "Could not add to cart.");
-      toast("Order failed. See alert for details.");
-    }finally{
-      els.btnOrder.disabled = false;
-      els.btnOrder.textContent = "Order (Add to Cart)";
-    }
+    }, 700);
   });
 
   // =========================
