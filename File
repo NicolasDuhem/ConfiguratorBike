@@ -589,13 +589,13 @@
         missing.push(label);
         return "";
       }
-      return text;
+      return `${label}: ${text}`;
     });
 
     if (missing.length){
       return { missing, value: "" };
     }
-    return { missing, value: parts.join(" - ") };
+    return { missing, value: parts.join("\n") };
   }
 
   function calc(){
