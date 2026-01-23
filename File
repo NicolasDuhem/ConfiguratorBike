@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bike Configurator (HTML Only)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --text:#e8ecff;
+      --muted:#a9b2da;
+      --accent:#7aa2ff;
+      --ok:#39d98a;
+      --bad:#ff5c77;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(122,162,255,.25), transparent 60%),
+                  radial-gradient(900px 700px at 80% 20%, rgba(57,217,138,.18), transparent 55%),
+                  linear-gradient(180deg, #070a14, var(--bg));
+      color:var(--text);
+    }
+    .wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+      display:grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 18px;
+    }
+    header{
+      grid-column: 1 / -1;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:6px;
+    }
+    .title{display:flex; flex-direction:column; gap:6px}
+    h1{margin:0; font-size: 22px; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:13px; line-height:1.4}
+
+    .top-actions{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    button{
+      appearance:none; border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:13px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.25);
+      transition: transform .06s ease, border-color .2s ease, background .2s ease;
+    }
+    button:hover{border-color: rgba(122,162,255,.45)}
+    button:active{transform: translateY(1px)}
+    button.primary{
+      border-color: rgba(122,162,255,.55);
+      background: linear-gradient(180deg, rgba(122,162,255,.28), rgba(122,162,255,.10));
+    }
+    button.success{
+      border-color: rgba(57,217,138,.55);
+      background: linear-gradient(180deg, rgba(57,217,138,.22), rgba(57,217,138,.08));
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panel .hd{
+      padding: 14px 14px 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .panel .hd .h2{font-weight: 800; font-size: 14px; letter-spacing:.2px}
+    .panel .bd{padding: 14px}
+
+    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+    @media (max-width: 980px){
+      .wrap{grid-template-columns: 1fr}
+      .grid{grid-template-columns:1fr}
+    }
+
+    .step{
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(15,23,51,.55);
+      border-radius: 14px;
+      overflow:hidden;
+    }
+    .step .shd{
+      padding: 12px 12px 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .pill{
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(122,162,255,.14);
+      border:1px solid rgba(122,162,255,.25);
+      color: #dbe5ff;
+    }
+    .pill.ok{
+      background: rgba(57,217,138,.14);
+      border-color: rgba(57,217,138,.25);
+      color:#d7ffef;
+    }
+    .step .shd .name{font-weight: 800; font-size: 13px}
+    .step .shd .meta{font-size:12px; color: var(--muted)}
+    .step .sbd{padding: 12px}
+
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      width:100%;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:700;
+    }
+    select, input[type="number"], textarea{
+      width:100%;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(7,10,20,.45);
+      color: var(--text);
+      padding: 10px 12px;
+      outline:none;
+      font-weight:700;
+    }
+    select:focus, input:focus, textarea:focus{
+      border-color: rgba(122,162,255,.5);
+      box-shadow: 0 0 0 3px rgba(122,162,255,.12);
+    }
+
+    .summary{display:flex; flex-direction:column; gap:12px}
+    .totals{
+      display:flex; flex-direction:column; gap:8px;
+      padding: 12px;
+      background: rgba(7,10,20,.35);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+    }
+    .line{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size: 13px}
+    .line strong{font-size: 14px}
+    .hr{height:1px; background: rgba(255,255,255,.08); margin:6px 0}
+    .items{
+      padding: 12px;
+      background: rgba(7,10,20,.35);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+    }
+    .items ul{margin:0; padding-left: 18px}
+    .items li{margin:6px 0; color:#dfe6ff}
+    .muted{color:var(--muted)}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      font-size:12px; font-weight:800;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      width: fit-content;
+    }
+    .dot{width:10px; height:10px; border-radius: 999px; background: rgba(255,255,255,.40)}
+    .dot.ok{background: var(--ok)}
+    .dot.bad{background: var(--bad)}
+    .toast{
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(15,23,51,.92);
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      display:none;
+      max-width: 420px;
+      z-index: 999;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Bike Configurator</h1>
+        <div class="sub">
+          HTML-only. Click <b>Order</b> to add Product <b>#114</b> to cart and return to home.
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btnReset">Reset</button>
+        <button id="btnCopyJson">Copy JSON</button>
+        <button id="btnOrder" class="success">Order (Add to Cart)</button>
+      </div>
+    </header>
+
+    <!-- LEFT -->
+    <section class="panel">
+      <div class="hd">
+        <div class="h2">Build your bike</div>
+        <div class="muted" style="font-size:12px">
+          Adds to cart via Storefront Cart API.
+        </div>
+      </div>
+      <div class="bd">
+        <div class="grid">
+          <div class="step">
+            <div class="shd">
+              <span class="pill" id="pill-model">1</span>
+              <div style="flex:1">
+                <div class="name">Model</div>
+                <div class="meta" id="meta-model">Choose a base model</div>
+              </div>
+              <div class="meta" id="price-model">—</div>
+            </div>
+            <div class="sbd">
+              <label>Model
+                <select id="modelSelect"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="shd">
+              <span class="pill" id="pill-color">2</span>
+              <div style="flex:1">
+                <div class="name">Color</div>
+                <div class="meta" id="meta-color">Pick a frame color</div>
+              </div>
+              <div class="meta" id="price-color">—</div>
+            </div>
+            <div class="sbd">
+              <label>Frame color
+                <select id="colorSelect"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="shd">
+              <span class="pill" id="pill-gearing">3</span>
+              <div style="flex:1">
+                <div class="name">Gearing</div>
+                <div class="meta" id="meta-gearing">Select gearing</div>
+              </div>
+              <div class="meta" id="price-gearing">—</div>
+            </div>
+            <div class="sbd">
+              <label>Gearing
+                <select id="gearingSelect"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="shd">
+              <span class="pill" id="pill-rack">4</span>
+              <div style="flex:1">
+                <div class="name">Rack</div>
+                <div class="meta" id="meta-rack">Choose a rack</div>
+              </div>
+              <div class="meta" id="price-rack">—</div>
+            </div>
+            <div class="sbd">
+              <label>Rear rack
+                <select id="rackSelect"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="shd">
+              <span class="pill" id="pill-lights">5</span>
+              <div style="flex:1">
+                <div class="name">Lights</div>
+                <div class="meta" id="meta-lights">Add lights</div>
+              </div>
+              <div class="meta" id="price-lights">—</div>
+            </div>
+            <div class="sbd">
+              <label>Lights
+                <select id="lightsSelect"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="shd">
+              <span class="pill ok">6</span>
+              <div style="flex:1">
+                <div class="name">Quantity</div>
+                <div class="meta">How many bikes</div>
+              </div>
+              <div class="meta">—</div>
+            </div>
+            <div class="sbd">
+              <label>Qty
+                <input id="qtyInput" type="number" min="1" step="1" value="1" />
+              </label>
+              <label style="margin-top:10px;">Notes (optional)
+                <textarea id="notesInput" rows="3" placeholder="Internal notes..."></textarea>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="panel">
+      <div class="hd">
+        <div class="h2">Summary</div>
+        <div class="badge" id="validBadge">
+          <span class="dot bad" id="validDot"></span>
+          <span id="validText">Incomplete</span>
+        </div>
+      </div>
+      <div class="bd summary">
+        <div class="totals">
+          <div class="line"><span>Base price</span><strong id="basePrice">—</strong></div>
+          <div class="line"><span>Options</span><strong id="optionsPrice">—</strong></div>
+          <div class="hr"></div>
+          <div class="line"><span>Unit total</span><strong id="unitTotal">—</strong></div>
+          <div class="line"><span>Quantity</span><strong id="qtyDisplay">—</strong></div>
+          <div class="hr"></div>
+          <div class="line"><span>Grand total</span><strong id="grandTotal">—</strong></div>
+        </div>
+
+        <div class="items">
+          <div class="line" style="margin-bottom:8px;">
+            <strong>Selected</strong>
+            <span class="muted">Product ID for cart: <b>114</b></span>
+          </div>
+          <ul id="selectionList"></ul>
+          <div class="muted" id="constraintMsg" style="margin-top:10px; font-size:12px;"></div>
+        </div>
+
+        <div class="muted" style="font-size:12px; line-height:1.35">
+          If “Order” fails with a message about missing option/variant, it means Product 114 needs a
+          <b>variantId</b> or <b>optionSelections</b> to be added to cart.
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  // =========================
+  // BIGCOMMERCE SETTINGS
+  // =========================
+  const PRODUCT_ID = 114;
+
+  // Your storefront home page (redirect after add-to-cart success)
+  const HOME_URL = "%%GLOBAL_ShopPathSSL%%/";
+
+  // =========================
+  // CONFIG DATA (UI only)
+  // =========================
+  const DATA = {
+    currency: "EUR",
+    models: [
+      { id:"c-line", name:"C Line", basePrice: 1550, allowedGearing:["2","6"], allowedRacks:["none","standard"], allowedLights:["none","battery","dynamo"] },
+      { id:"p-line", name:"P Line", basePrice: 2450, allowedGearing:["4","12"], allowedRacks:["none","light"], allowedLights:["none","battery","dynamo"] },
+      { id:"t-line", name:"T Line", basePrice: 4950, allowedGearing:["4","12"], allowedRacks:["none"], allowedLights:["none","battery"] }
+    ],
+    colors: [
+      { id:"black", name:"Black", price: 0 },
+      { id:"racing-green", name:"Racing Green", price: 0 },
+      { id:"ocean-blue", name:"Ocean Blue", price: 50 },
+      { id:"sunset-orange", name:"Sunset Orange", price: 50 },
+      { id:"custom", name:"Custom Paint", price: 350 }
+    ],
+    gearing: [
+      { id:"2", name:"2-speed", price: 0 },
+      { id:"4", name:"4-speed", price: 120 },
+      { id:"6", name:"6-speed", price: 180 },
+      { id:"12", name:"12-speed", price: 350 }
+    ],
+    racks: [
+      { id:"none", name:"No rack", price: 0 },
+      { id:"standard", name:"Standard rack", price: 140 },
+      { id:"light", name:"Light rack", price: 160 }
+    ],
+    lights: [
+      { id:"none", name:"No lights", price: 0 },
+      { id:"battery", name:"Battery lights", price: 60 },
+      { id:"dynamo", name:"Dynamo lighting", price: 220 }
+    ]
+  };
+
+  // =========================
+  // STATE
+  // =========================
+  const STORAGE_KEY = "bike_configurator_b2b_v1";
+  const state = {
+    modelId: "",
+    colorId: "",
+    gearingId: "",
+    rackId: "",
+    lightsId: "",
+    qty: 1,
+    notes: ""
+  };
+
+  // =========================
+  // DOM
+  // =========================
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    model: $("modelSelect"),
+    color: $("colorSelect"),
+    gearing: $("gearingSelect"),
+    rack: $("rackSelect"),
+    lights: $("lightsSelect"),
+    qty: $("qtyInput"),
+    notes: $("notesInput"),
+
+    basePrice: $("basePrice"),
+    optionsPrice: $("optionsPrice"),
+    unitTotal: $("unitTotal"),
+    qtyDisplay: $("qtyDisplay"),
+    grandTotal: $("grandTotal"),
+
+    selectionList: $("selectionList"),
+    constraintMsg: $("constraintMsg"),
+
+    validDot: $("validDot"),
+    validText: $("validText"),
+
+    pillModel: $("pill-model"),
+    pillColor: $("pill-color"),
+    pillGearing: $("pill-gearing"),
+    pillRack: $("pill-rack"),
+    pillLights: $("pill-lights"),
+
+    metaModel: $("meta-model"),
+    metaColor: $("meta-color"),
+    metaGearing: $("meta-gearing"),
+    metaRack: $("meta-rack"),
+    metaLights: $("meta-lights"),
+
+    priceModel: $("price-model"),
+    priceColor: $("price-color"),
+    priceGearing: $("price-gearing"),
+    priceRack: $("price-rack"),
+    priceLights: $("price-lights"),
+
+    btnReset: $("btnReset"),
+    btnCopyJson: $("btnCopyJson"),
+    btnOrder: $("btnOrder"),
+
+    toast: $("toast"),
+  };
+
+  // =========================
+  // HELPERS
+  // =========================
+  function toast(msg){
+    els.toast.textContent = msg;
+    els.toast.style.display = "block";
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> els.toast.style.display="none", 2600);
+  }
+
+  function money(n){
+    const cur = DATA.currency || "EUR";
+    try{
+      return new Intl.NumberFormat(undefined, { style:"currency", currency:cur, maximumFractionDigits:0 }).format(n);
+    }catch(e){
+      return cur + " " + Math.round(n);
+    }
+  }
+
+  function findById(list, id){ return list.find(x => x.id === id) || null; }
+
+  function normalizeQty(v){
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 1) return 1;
+    return Math.floor(n);
+  }
+
+  function setSelectOptions(selectEl, list, placeholder){
+    selectEl.innerHTML = "";
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = placeholder;
+    selectEl.appendChild(opt0);
+
+    list.forEach(item=>{
+      const opt = document.createElement("option");
+      opt.value = item.id;
+      opt.textContent = item.name + (item.price ? ` (+${money(item.price)})` : "");
+      selectEl.appendChild(opt);
+    });
+  }
+
+  function setSelectOptionsFiltered(selectEl, list, allowedIds, placeholder){
+    const filtered = list.filter(x => allowedIds.includes(x.id));
+    setSelectOptions(selectEl, filtered, placeholder);
+  }
+
+  function updatePill(pillEl, ok){
+    pillEl.classList.toggle("ok", !!ok);
+  }
+
+  function validateAndApplyConstraints(){
+    const model = findById(DATA.models, state.modelId);
+
+    if (!model){
+      return { ok:false, msg:"Choose a model to unlock compatible options.", model:null };
+    }
+
+    setSelectOptionsFiltered(els.gearing, DATA.gearing, model.allowedGearing, "Select gearing…");
+    setSelectOptionsFiltered(els.rack, DATA.racks, model.allowedRacks, "Select rack…");
+    setSelectOptionsFiltered(els.lights, DATA.lights, model.allowedLights, "Select lights…");
+
+    setSelectOptions(els.color, DATA.colors, "Select color…");
+
+    // invalidate incompatible
+    if (state.gearingId && !model.allowedGearing.includes(state.gearingId)) state.gearingId = "";
+    if (state.rackId && !model.allowedRacks.includes(state.rackId)) state.rackId = "";
+    if (state.lightsId && !model.allowedLights.includes(state.lightsId)) state.lightsId = "";
+
+    // reapply
+    els.model.value = state.modelId;
+    els.color.value = state.colorId;
+    els.gearing.value = state.gearingId;
+    els.rack.value = state.rackId;
+    els.lights.value = state.lightsId;
+
+    const missing = [];
+    if (!state.modelId) missing.push("Model");
+    if (!state.colorId) missing.push("Color");
+    if (!state.gearingId) missing.push("Gearing");
+    if (!state.rackId) missing.push("Rack");
+    if (!state.lightsId) missing.push("Lights");
+
+    if (missing.length){
+      return { ok:false, msg:"Missing: " + missing.join(", ") + ".", model };
+    }
+    return { ok:true, msg:"Ready to order.", model };
+  }
+
+  function calc(){
+    const model = findById(DATA.models, state.modelId);
+    const color = findById(DATA.colors, state.colorId);
+    const gearing = findById(DATA.gearing, state.gearingId);
+    const rack = findById(DATA.racks, state.rackId);
+    const lights = findById(DATA.lights, state.lightsId);
+
+    const base = model ? model.basePrice : 0;
+    const options =
+      (color ? color.price : 0) +
+      (gearing ? gearing.price : 0) +
+      (rack ? rack.price : 0) +
+      (lights ? lights.price : 0);
+
+    const unit = base + options;
+    const qty = normalizeQty(state.qty);
+    const total = unit * qty;
+
+    return { base, options, unit, qty, total, model, color, gearing, rack, lights };
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (!obj) return;
+      state.modelId = obj.modelId || "";
+      state.colorId = obj.colorId || "";
+      state.gearingId = obj.gearingId || "";
+      state.rackId = obj.rackId || "";
+      state.lightsId = obj.lightsId || "";
+      state.qty = normalizeQty(obj.qty || 1);
+      state.notes = obj.notes || "";
+    }catch(e){}
+  }
+
+  function exportConfig(){
+    const payload = {
+      version: 1,
+      timestamp: new Date().toISOString(),
+      productIdForCart: PRODUCT_ID,
+      config: { ...state, qty: normalizeQty(state.qty) }
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  function render(){
+    const v = validateAndApplyConstraints();
+    const c = calc();
+
+    els.constraintMsg.textContent = v.msg || "";
+
+    els.basePrice.textContent = c.model ? money(c.base) : "—";
+    els.optionsPrice.textContent = c.model ? money(c.options) : "—";
+    els.unitTotal.textContent = c.model ? money(c.unit) : "—";
+    els.qtyDisplay.textContent = String(c.qty);
+    els.grandTotal.textContent = c.model ? money(c.total) : "—";
+
+    if (v.ok){
+      els.validDot.className = "dot ok";
+      els.validText.textContent = "Ready";
+    }else{
+      els.validDot.className = "dot bad";
+      els.validText.textContent = "Incomplete";
+    }
+
+    els.metaModel.textContent = c.model ? c.model.name : "Choose a base model";
+    els.priceModel.textContent = c.model ? money(c.model.basePrice) : "—";
+    els.metaColor.textContent = c.color ? c.color.name : "Pick a frame color";
+    els.priceColor.textContent = c.color ? (c.color.price ? "+"+money(c.color.price) : money(0)) : "—";
+    els.metaGearing.textContent = c.gearing ? c.gearing.name : "Select gearing";
+    els.priceGearing.textContent = c.gearing ? (c.gearing.price ? "+"+money(c.gearing.price) : money(0)) : "—";
+    els.metaRack.textContent = c.rack ? c.rack.name : "Choose a rack";
+    els.priceRack.textContent = c.rack ? (c.rack.price ? "+"+money(c.rack.price) : money(0)) : "—";
+    els.metaLights.textContent = c.lights ? c.lights.name : "Add lights";
+    els.priceLights.textContent = c.lights ? (c.lights.price ? "+"+money(c.lights.price) : money(0)) : "—";
+
+    updatePill(els.pillModel, !!state.modelId);
+    updatePill(els.pillColor, !!state.colorId);
+    updatePill(els.pillGearing, !!state.gearingId);
+    updatePill(els.pillRack, !!state.rackId);
+    updatePill(els.pillLights, !!state.lightsId);
+
+    els.selectionList.innerHTML = "";
+    const addLi = (label, val) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="muted">${label}:</span> ${val}`;
+      els.selectionList.appendChild(li);
+    };
+    if (c.model) addLi("Model", c.model.name);
+    if (c.color) addLi("Color", c.color.name);
+    if (c.gearing) addLi("Gearing", c.gearing.name);
+    if (c.rack) addLi("Rack", c.rack.name);
+    if (c.lights) addLi("Lights", c.lights.name);
+    addLi("Qty", String(c.qty));
+    if (state.notes && state.notes.trim()) addLi("Notes", state.notes.trim());
+
+    saveState();
+  }
+
+  // =========================
+  // BIGCOMMERCE CART HELPERS
+  // =========================
+  async function getExistingCartId(){
+    const res = await fetch("/api/storefront/carts", { credentials: "include" });
+    if (!res.ok) return null;
+    const carts = await res.json();
+    if (Array.isArray(carts) && carts.length > 0) return carts[0].id;
+    return null;
+  }
+
+  async function createCartWithItem(itemPayload){
+    const res = await fetch("/api/storefront/carts", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lineItems: { physicalItems: [itemPayload] } })
+    });
+    return res;
+  }
+
+  async function addItemToCart(cartId, itemPayload){
+    const res = await fetch(`/api/storefront/carts/${cartId}/items`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lineItems: { physicalItems: [itemPayload] } })
+    });
+    return res;
+  }
+
+  async function addToCart_B2B(productId, qty){
+    // Minimal payload (works for simple products)
+    const itemPayload = {
+      productId: Number(productId),
+      quantity: Number(qty)
+      // If Product 114 needs variants/modifiers, you MUST add:
+      // variantId: Number(123)
+      // OR optionSelections: [{ optionId: X, optionValue: Y }, ...]
+    };
+
+    const existingCartId = await getExistingCartId();
+
+    let res;
+    if (!existingCartId){
+      res = await createCartWithItem(itemPayload);
+    }else{
+      res = await addItemToCart(existingCartId, itemPayload);
+    }
+
+    if (!res.ok){
+      const text = await res.text().catch(()=> "");
+      // Common failure: 422 missing option_id / option selections
+      throw new Error(
+        `Add-to-cart failed (HTTP ${res.status}).\n` +
+        `This usually means Product 114 requires a variant/options.\n\n` +
+        `Response: ${text || "(no body)"}`
+      );
+    }
+
+    return await res.json();
+  }
+
+  // =========================
+  // EVENTS
+  // =========================
+  function initSelects(){
+    setSelectOptions(els.model, DATA.models.map(m=>({id:m.id, name:m.name, price:m.basePrice})), "Select model…");
+    setSelectOptions(els.color, DATA.colors, "Select color…");
+    setSelectOptions(els.gearing, DATA.gearing, "Select gearing…");
+    setSelectOptions(els.rack, DATA.racks, "Select rack…");
+    setSelectOptions(els.lights, DATA.lights, "Select lights…");
+
+    els.model.value = state.modelId;
+    els.color.value = state.colorId;
+    els.gearing.value = state.gearingId;
+    els.rack.value = state.rackId;
+    els.lights.value = state.lightsId;
+  }
+
+  els.model.addEventListener("change", (e)=>{ state.modelId = e.target.value; render(); });
+  els.color.addEventListener("change", (e)=>{ state.colorId = e.target.value; render(); });
+  els.gearing.addEventListener("change", (e)=>{ state.gearingId = e.target.value; render(); });
+  els.rack.addEventListener("change", (e)=>{ state.rackId = e.target.value; render(); });
+  els.lights.addEventListener("change", (e)=>{ state.lightsId = e.target.value; render(); });
+  els.qty.addEventListener("input", (e)=>{ state.qty = normalizeQty(e.target.value); render(); });
+  els.notes.addEventListener("input", (e)=>{ state.notes = e.target.value || ""; render(); });
+
+  els.btnReset.addEventListener("click", ()=>{
+    state.modelId = "";
+    state.colorId = "";
+    state.gearingId = "";
+    state.rackId = "";
+    state.lightsId = "";
+    state.qty = 1;
+    state.notes = "";
+    els.qty.value = "1";
+    els.notes.value = "";
+    initSelects();
+    render();
+    toast("Reset complete.");
+  });
+
+  els.btnCopyJson.addEventListener("click", async ()=>{
+    const txt = exportConfig();
+    try{
+      await navigator.clipboard.writeText(txt);
+      toast("Config JSON copied.");
+    }catch(e){
+      prompt("Copy JSON:", txt);
+    }
+  });
+
+  els.btnOrder.addEventListener("click", async ()=>{
+    const v = validateAndApplyConstraints();
+    if (!v.ok){
+      toast("Complete required selections before ordering.");
+      alert(v.msg);
+      return;
+    }
+
+    const qty = normalizeQty(state.qty);
+
+    els.btnOrder.disabled = true;
+    els.btnOrder.textContent = "Ordering…";
+
+    try{
+      await addToCart_B2B(PRODUCT_ID, qty);
+
+      toast("Added to cart. Returning home…");
+      window.location.href = HOME_URL;
+    }catch(e){
+      console.error(e);
+      alert(e.message || "Could not add to cart.");
+      toast("Order failed. See alert for details.");
+    }finally{
+      els.btnOrder.disabled = false;
+      els.btnOrder.textContent = "Order (Add to Cart)";
+    }
+  });
+
+  // =========================
+  // INIT
+  // =========================
+  loadState();
+  initSelects();
+  els.qty.value = String(state.qty);
+  els.notes.value = state.notes || "";
+  render();
+})();
+</script>
+</body>
+</html>
