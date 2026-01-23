@@ -569,6 +569,35 @@
     return { ok:true, msg:"Ready to order.", model };
   }
 
+  function buildAttribute116Value(){
+    const selections = [
+      { label: "Model", el: els.model },
+      { label: "Colour", el: els.color },
+      { label: "Speed", el: els.gearing },
+      { label: "Rack", el: els.rack },
+      { label: "Light", el: els.lights },
+    ];
+    const missing = [];
+    const parts = selections.map(({ label, el }) => {
+      if (!el.value){
+        missing.push(label);
+        return "";
+      }
+      const option = el.options[el.selectedIndex];
+      const text = option ? option.textContent.trim() : "";
+      if (!text){
+        missing.push(label);
+        return "";
+      }
+      return text;
+    });
+
+    if (missing.length){
+      return { missing, value: "" };
+    }
+    return { missing, value: parts.join(" - ") };
+  }
+
   function calc(){
     const model = findById(DATA.models, state.modelId);
     const color = findById(DATA.colors, state.colorId);
@@ -677,7 +706,7 @@
   // =========================
   // BIGCOMMERCE CART HELPERS
   // =========================
-  function submitCartForm(qty){
+  function submitCartForm(qty, attribute116Value){
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "/cart.php";
@@ -694,6 +723,7 @@
     addInput("action", "add");
     addInput("product_id", String(PRODUCT_ID));
     addInput("qty[]", String(qty));
+    addInput("attribute[116]", attribute116Value);
 
     document.body.appendChild(form);
     form.submit();
@@ -751,10 +781,11 @@
   });
 
   els.btnOrder.addEventListener("click", ()=>{
-    const v = validateAndApplyConstraints();
-    if (!v.ok){
+    const attributeResult = buildAttribute116Value();
+    if (attributeResult.missing.length){
+      const message = `Please complete: ${attributeResult.missing.join(", ")}`;
       toast("Complete required selections before ordering.");
-      alert(v.msg);
+      alert(message);
       return;
     }
 
@@ -763,7 +794,7 @@
     els.btnOrder.disabled = true;
     els.btnOrder.textContent = "Ordering…";
 
-    submitCartForm(qty);
+    submitCartForm(qty, attributeResult.value);
     toast("Added to cart. Returning home…");
     setTimeout(() => {
       window.location.href = HOME_URL;
