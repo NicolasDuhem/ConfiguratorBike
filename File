@@ -288,6 +288,7 @@
     .admin-row-actions{display:flex; gap:6px; flex-wrap:wrap}
     .admin-row-actions button{padding:6px 8px; font-size:11px}
     .status-line{font-size:12px; color: var(--muted)}
+    .status-line.warn{color: var(--bad); font-weight: 800}
   </style>
 </head>
 
@@ -484,6 +485,7 @@
       <div>
         <strong>Admin Panel</strong>
         <div class="status-line" id="adminStatusLine"></div>
+        <div class="status-line" id="adminSizeLine"></div>
       </div>
       <div class="admin-actions">
         <button id="btnRefreshSheet">Refresh from Sheet</button>
@@ -517,6 +519,7 @@
   // =========================
   const CONFIG_API_BASE = "https://script.google.com/macros/s/AKfycbxXozAWB_L2XQhUEVOWd36XPdtqxhHPQbVHbcTzZvcznn6MS9igoZhigt6KBkTvG-0-Qg/exec";
   const CONFIG_API_KEY = "IwillUpdatethepaswordlater";
+  const CONFIG_SIZE_WARNING = 200000;
 
   // =========================
   // DEFAULT CONFIG (fallback)
@@ -740,6 +743,7 @@
     adminTabs: $("adminTabs"),
     adminSections: $("adminSections"),
     adminStatusLine: $("adminStatusLine"),
+    adminSizeLine: $("adminSizeLine"),
     btnRefreshSheet: $("btnRefreshSheet"),
     btnResetSheet: $("btnResetSheet"),
     btnResetDefaults: $("btnResetDefaults"),
@@ -1045,10 +1049,22 @@
     return JSON.stringify(CONFIG, null, 2);
   }
 
+  function getConfigSize(){
+    try{
+      return JSON.stringify(CONFIG).length;
+    }catch(e){
+      return 0;
+    }
+  }
+
   function updateAdminStatus(){
     const updatedAt = adminState.lastSheetUpdatedAt ? `Sheet updated: ${adminState.lastSheetUpdatedAt}` : "Sheet updated: —";
     const lastSave = adminState.lastSaveAttempt ? `Last save attempt: ${adminState.lastSaveAttempt}` : "Last save attempt: —";
     els.adminStatusLine.textContent = `${updatedAt} | ${lastSave}`;
+    const size = getConfigSize();
+    const warning = size > CONFIG_SIZE_WARNING;
+    els.adminSizeLine.textContent = `Config size: ${size} chars${warning ? " (warning: large config)" : ""}`;
+    els.adminSizeLine.classList.toggle("warn", warning);
   }
 
   function reconcileSelections(){
@@ -1117,6 +1133,7 @@
     const url = `${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`;
     const body = new URLSearchParams();
     body.set("payload", JSON.stringify(configObj));
+    body.set("key", CONFIG_API_KEY);
     let responseText = "";
     const res = await fetch(url, {
       method: "POST",
@@ -1632,6 +1649,7 @@
     }else if (field === "imageUrl"){
       option.imageUrl = input.value.trim();
     }
+    updateAdminStatus();
   });
 
   // =========================
