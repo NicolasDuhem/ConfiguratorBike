@@ -289,6 +289,23 @@
     .admin-row-actions button{padding:6px 8px; font-size:11px}
     .status-line{font-size:12px; color: var(--muted)}
     .status-line.warn{color: var(--bad); font-weight: 800}
+    .admin-group-row{
+      display:grid;
+      grid-template-columns: 120px 1fr 110px 1fr;
+      gap:8px;
+      align-items:center;
+      margin-bottom:8px;
+    }
+    .admin-inline{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .admin-inline label{flex:1}
+    .admin-inline .small{max-width: 180px}
+    .admin-inline input[type="checkbox"]{width:auto}
+    .admin-help{font-size:12px; color: var(--muted)}
   </style>
 </head>
 
@@ -319,111 +336,7 @@
         </div>
       </div>
       <div class="bd">
-        <div class="grid">
-          <div class="step">
-            <div class="shd">
-              <span class="pill" id="pill-model">1</span>
-              <div style="flex:1">
-                <div class="name">Model</div>
-                <div class="meta" id="meta-model">Choose a base model</div>
-              </div>
-              <div class="meta" id="price-model">—</div>
-            </div>
-            <div class="sbd">
-              <label>Model
-                <select id="modelSelect"></select>
-              </label>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="shd">
-              <span class="pill" id="pill-color">2</span>
-              <div style="flex:1">
-                <div class="name">Color</div>
-                <div class="meta" id="meta-color">Pick a frame color</div>
-              </div>
-              <div class="meta" id="price-color">—</div>
-            </div>
-            <div class="sbd">
-              <label>Frame color
-                <select id="colorSelect"></select>
-              </label>
-              <img id="colorPreview" class="option-preview" alt="Selected color preview" />
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="shd">
-              <span class="pill" id="pill-gearing">3</span>
-              <div style="flex:1">
-                <div class="name">Gearing</div>
-                <div class="meta" id="meta-gearing">Select gearing</div>
-              </div>
-              <div class="meta" id="price-gearing">—</div>
-            </div>
-            <div class="sbd">
-              <label>Gearing
-                <select id="gearingSelect"></select>
-              </label>
-              <img id="gearingPreview" class="option-preview" alt="Selected gearing preview" />
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="shd">
-              <span class="pill" id="pill-rack">4</span>
-              <div style="flex:1">
-                <div class="name">Rack</div>
-                <div class="meta" id="meta-rack">Choose a rack</div>
-              </div>
-              <div class="meta" id="price-rack">—</div>
-            </div>
-            <div class="sbd">
-              <label>Rear rack
-                <select id="rackSelect"></select>
-              </label>
-              <img id="rackPreview" class="option-preview" alt="Selected rack preview" />
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="shd">
-              <span class="pill" id="pill-lights">5</span>
-              <div style="flex:1">
-                <div class="name">Lights</div>
-                <div class="meta" id="meta-lights">Add lights</div>
-              </div>
-              <div class="meta" id="price-lights">—</div>
-            </div>
-            <div class="sbd">
-              <label>Lights
-                <select id="lightsSelect"></select>
-              </label>
-              <img id="lightsPreview" class="option-preview" alt="Selected lights preview" />
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="shd">
-              <span class="pill ok">6</span>
-              <div style="flex:1">
-                <div class="name">Quantity</div>
-                <div class="meta">How many bikes</div>
-              </div>
-              <div class="meta">—</div>
-            </div>
-            <div class="sbd">
-              <label>Qty
-                <input id="qtyInput" type="number" min="1" step="1" value="1" />
-              </label>
-              <label style="margin-top:10px;">Notes (optional)
-                <textarea id="notesInput" rows="3" placeholder="Internal notes..."></textarea>
-              </label>
-            </div>
-          </div>
-
-        </div>
+        <div class="grid" id="stepsGrid"></div>
       </div>
     </section>
 
@@ -499,8 +412,8 @@
       <label>Model to edit
         <select id="adminModelSelect"></select>
       </label>
-      <div class="admin-tabs" id="adminTabs"></div>
-      <div id="adminSections"></div>
+      <div class="admin-section" id="adminGroupsSection"></div>
+      <div class="admin-section" id="adminOptionsSection"></div>
     </div>
   </div>
 
@@ -525,133 +438,235 @@
   // DEFAULT CONFIG (fallback)
   // =========================
   const DEFAULT_CONFIG = {
-    version: 1,
+    version: 2,
     models: {
       "c-line": {
         label: "C Line",
-        options: {
-          colors: [
-            { id: "black", label: "Black", price: 0, imageUrl: "", enabled: true },
-            { id: "red", label: "Red", price: 0, imageUrl: "", enabled: true }
-          ],
-          gearing: [
-            { id: "1", label: "1-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
-          ],
-          rack: [
-            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true },
-            { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
-          ],
-          lights: [
-            { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
-            { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
-          ]
+        groupsOrder: ["colors", "gearing", "rack", "lights"],
+        groups: {
+          colors: {
+            label: "Color",
+            required: true,
+            options: [
+              { id: "black", label: "Black", price: 0, imageUrl: "", enabled: true },
+              { id: "red", label: "Red", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          gearing: {
+            label: "Gearing",
+            required: true,
+            options: [
+              { id: "1", label: "1-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          rack: {
+            label: "Rack",
+            required: true,
+            options: [
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true },
+              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          lights: {
+            label: "Lights",
+            required: true,
+            options: [
+              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
+              { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
+            ]
+          }
         }
       },
       "c-line-elec": {
         label: "C Line Electric",
-        options: {
-          colors: [
-            { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
-            { id: "green", label: "Green", price: 0, imageUrl: "", enabled: true }
-          ],
-          gearing: [
-            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
-          ],
-          rack: [
-            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
-          ],
-          lights: [
-            { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
-          ]
+        groupsOrder: ["colors", "gearing", "rack", "lights"],
+        groups: {
+          colors: {
+            label: "Color",
+            required: true,
+            options: [
+              { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
+              { id: "green", label: "Green", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          gearing: {
+            label: "Gearing",
+            required: true,
+            options: [
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          rack: {
+            label: "Rack",
+            required: true,
+            options: [
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          lights: {
+            label: "Lights",
+            required: true,
+            options: [
+              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+            ]
+          }
         }
       },
       "p-line": {
         label: "P Line",
-        options: {
-          colors: [
-            { id: "yellow", label: "Yellow", price: 0, imageUrl: "", enabled: true },
-            { id: "raw-lacquer", label: "Raw Lacquer", price: 0, imageUrl: "", enabled: true }
-          ],
-          gearing: [
-            { id: "2", label: "2-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "8", label: "8-speed", price: 0, imageUrl: "", enabled: true }
-          ],
-          rack: [
-            { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
-          ],
-          lights: [
-            { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
-            { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
-          ]
+        groupsOrder: ["colors", "gearing", "rack", "lights"],
+        groups: {
+          colors: {
+            label: "Color",
+            required: true,
+            options: [
+              { id: "yellow", label: "Yellow", price: 0, imageUrl: "", enabled: true },
+              { id: "raw-lacquer", label: "Raw Lacquer", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          gearing: {
+            label: "Gearing",
+            required: true,
+            options: [
+              { id: "2", label: "2-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "8", label: "8-speed", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          rack: {
+            label: "Rack",
+            required: true,
+            options: [
+              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          lights: {
+            label: "Lights",
+            required: true,
+            options: [
+              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
+              { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
+            ]
+          }
         }
       },
       "p-line-elec": {
         label: "P Line Electric",
-        options: {
-          colors: [
-            { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
-            { id: "line-green", label: "Line Green", price: 0, imageUrl: "", enabled: true }
-          ],
-          gearing: [
-            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
-          ],
-          rack: [
-            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
-          ],
-          lights: [
-            { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
-          ]
+        groupsOrder: ["colors", "gearing", "rack", "lights"],
+        groups: {
+          colors: {
+            label: "Color",
+            required: true,
+            options: [
+              { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
+              { id: "line-green", label: "Line Green", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          gearing: {
+            label: "Gearing",
+            required: true,
+            options: [
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          rack: {
+            label: "Rack",
+            required: true,
+            options: [
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          lights: {
+            label: "Lights",
+            required: true,
+            options: [
+              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+            ]
+          }
         }
       },
       "g-line": {
         label: "G Line",
-        options: {
-          colors: [
-            { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
-            { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
-            { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
-          ],
-          gearing: [
-            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
-          ],
-          rack: [
-            { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
-          ],
-          lights: [
-            { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true }
-          ]
+        groupsOrder: ["colors", "gearing", "rack", "lights"],
+        groups: {
+          colors: {
+            label: "Color",
+            required: true,
+            options: [
+              { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
+              { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
+              { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          gearing: {
+            label: "Gearing",
+            required: true,
+            options: [
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          rack: {
+            label: "Rack",
+            required: true,
+            options: [
+              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          lights: {
+            label: "Lights",
+            required: true,
+            options: [
+              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true }
+            ]
+          }
         }
       },
       "g-line-elec": {
         label: "G Line Electric",
-        options: {
-          colors: [
-            { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
-            { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
-            { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
-          ],
-          gearing: [
-            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
-          ],
-          rack: [
-            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
-          ],
-          lights: [
-            { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
-          ]
+        groupsOrder: ["colors", "gearing", "rack", "lights"],
+        groups: {
+          colors: {
+            label: "Color",
+            required: true,
+            options: [
+              { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
+              { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
+              { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          gearing: {
+            label: "Gearing",
+            required: true,
+            options: [
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          rack: {
+            label: "Rack",
+            required: true,
+            options: [
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+            ]
+          },
+          lights: {
+            label: "Lights",
+            required: true,
+            options: [
+              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+            ]
+          }
         }
       }
     }
   };
 
-  let CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  let CONFIG = normalizeConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
 
   // =========================
   // STATE
@@ -660,10 +675,7 @@
   const ADMIN_STORAGE_KEY = "bike_configurator_admin_mode";
   const state = {
     modelId: "",
-    colorId: "",
-    gearingId: "",
-    rackId: "",
-    lightsId: "",
+    selections: {},
     qty: 1,
     notes: ""
   };
@@ -671,7 +683,7 @@
   const adminState = {
     enabled: false,
     modelId: "",
-    activeGroup: "colors",
+    activeGroup: "",
     lastSheetUpdatedAt: "",
     lastSaveAttempt: ""
   };
@@ -683,13 +695,7 @@
   // =========================
   const $ = (id) => document.getElementById(id);
   const els = {
-    model: $("modelSelect"),
-    color: $("colorSelect"),
-    gearing: $("gearingSelect"),
-    rack: $("rackSelect"),
-    lights: $("lightsSelect"),
-    qty: $("qtyInput"),
-    notes: $("notesInput"),
+    stepsGrid: $("stepsGrid"),
 
     basePrice: $("basePrice"),
     optionsPrice: $("optionsPrice"),
@@ -703,35 +709,12 @@
     validDot: $("validDot"),
     validText: $("validText"),
 
-    pillModel: $("pill-model"),
-    pillColor: $("pill-color"),
-    pillGearing: $("pill-gearing"),
-    pillRack: $("pill-rack"),
-    pillLights: $("pill-lights"),
-
-    metaModel: $("meta-model"),
-    metaColor: $("meta-color"),
-    metaGearing: $("meta-gearing"),
-    metaRack: $("meta-rack"),
-    metaLights: $("meta-lights"),
-
-    priceModel: $("price-model"),
-    priceColor: $("price-color"),
-    priceGearing: $("price-gearing"),
-    priceRack: $("price-rack"),
-    priceLights: $("price-lights"),
-
     btnReset: $("btnReset"),
     btnCopyJson: $("btnCopyJson"),
     btnOrder: $("btnOrder"),
     btnAdmin: $("btnAdmin"),
 
     toast: $("toast"),
-
-    colorPreview: $("colorPreview"),
-    gearingPreview: $("gearingPreview"),
-    rackPreview: $("rackPreview"),
-    lightsPreview: $("lightsPreview"),
 
     adminPrompt: $("adminPrompt"),
     adminPassword: $("adminPassword"),
@@ -740,8 +723,8 @@
 
     adminPanel: $("adminPanel"),
     adminModelSelect: $("adminModelSelect"),
-    adminTabs: $("adminTabs"),
-    adminSections: $("adminSections"),
+    adminGroupsSection: $("adminGroupsSection"),
+    adminOptionsSection: $("adminOptionsSection"),
     adminStatusLine: $("adminStatusLine"),
     adminSizeLine: $("adminSizeLine"),
     btnRefreshSheet: $("btnRefreshSheet"),
@@ -763,12 +746,7 @@
     "/p-line-elec-configurator": "p-line-elec"
   };
 
-  const GROUPS = [
-    { key: "colors", label: "Colors" },
-    { key: "gearing", label: "Gearing" },
-    { key: "rack", label: "Rack" },
-    { key: "lights", label: "Lights" }
-  ];
+  const DEFAULT_GROUP_ORDER = ["colors", "gearing", "rack", "lights"];
 
   function getForcedModelFromPath(){
     const rawPath = (window.location.pathname || "").toLowerCase();
@@ -801,6 +779,62 @@
     const n = Number(v);
     if (!Number.isFinite(n) || n < 1) return 1;
     return Math.floor(n);
+  }
+
+  function titleCaseFromKey(key){
+    return String(key || "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+
+  function normalizeConfig(config){
+    if (!config || !config.models) return config;
+    Object.values(config.models).forEach((model) => {
+      if (!model) return;
+      if (model.options && !model.groups){
+        const order = [];
+        const groups = {};
+        Object.entries(model.options).forEach(([key, options]) => {
+          order.push(key);
+          groups[key] = {
+            label: titleCaseFromKey(key),
+            required: true,
+            options: Array.isArray(options) ? options : []
+          };
+        });
+        model.groupsOrder = order.length ? order : DEFAULT_GROUP_ORDER.slice();
+        model.groups = groups;
+        delete model.options;
+      }
+      if (!Array.isArray(model.groupsOrder)){
+        model.groupsOrder = model.groups ? Object.keys(model.groups) : DEFAULT_GROUP_ORDER.slice();
+      }
+      if (!model.groups){
+        model.groups = {};
+      }
+      model.groupsOrder.forEach((key) => {
+        if (!model.groups[key]){
+          model.groups[key] = {
+            label: titleCaseFromKey(key),
+            required: true,
+            options: []
+          };
+        }else{
+          if (!model.groups[key].label){
+            model.groups[key].label = titleCaseFromKey(key);
+          }
+          if (typeof model.groups[key].required !== "boolean"){
+            model.groups[key].required = true;
+          }
+          if (!Array.isArray(model.groups[key].options)){
+            model.groups[key].options = [];
+          }
+        }
+      });
+    });
+    return config;
   }
 
   function setSelectOptions(selectEl, list, placeholder){
@@ -843,31 +877,13 @@
   }
 
   function getEnabledOptions(model, groupKey){
-    if (!model || !model.options || !model.options[groupKey]) return [];
-    return model.options[groupKey].filter(opt => opt.enabled);
-  }
-
-  function applyOptions(selectEl, options, placeholder, currentValue){
-    if (!options.length){
-      setSelectOptions(selectEl, [], "Unavailable");
-      selectEl.disabled = true;
-      selectEl.dataset.fixed = "true";
-      return { value: "", fixed: true, option: null };
-    }
-    setSelectOptions(selectEl, options, placeholder);
-    const isFixed = options.length === 1;
-    let nextValue = currentValue || "";
-    if (isFixed){
-      nextValue = options[0].id;
-    } else if (nextValue && !options.some(opt => opt.id === nextValue)){
-      nextValue = "";
-    }
-    selectEl.disabled = isFixed;
-    selectEl.dataset.fixed = isFixed ? "true" : "false";
-    return { value: nextValue, fixed: isFixed, option: options[0] || null };
+    if (!model || !model.groups || !model.groups[groupKey]) return [];
+    const options = model.groups[groupKey].options || [];
+    return options.filter(opt => opt.enabled);
   }
 
   function updatePreview(imgEl, option){
+    if (!imgEl) return;
     if (option && option.imageUrl){
       imgEl.src = option.imageUrl;
       imgEl.style.display = "block";
@@ -877,82 +893,114 @@
     }
   }
 
+  function ensureSelection(model, groupKey, selection){
+    const enabled = getEnabledOptions(model, groupKey);
+    if (!enabled.length){
+      return { value: "", fixed: true, enabled, selected: null, disabled: true };
+    }
+    const isFixed = enabled.length === 1;
+    let nextValue = selection || "";
+    if (isFixed){
+      nextValue = enabled[0].id;
+    }else if (nextValue && !enabled.some(opt => opt.id === nextValue)){
+      nextValue = "";
+    }
+    const selected = enabled.find(opt => opt.id === nextValue) || null;
+    return { value: nextValue, fixed: isFixed, enabled, selected, disabled: isFixed };
+  }
+
+  function buildOptionOptions(options, selectedValue, placeholder, allowEmpty){
+    const parts = [];
+    const placeholderLabel = placeholder || "Select option…";
+    if (allowEmpty){
+      parts.push(`<option value="">${escapeHtml(placeholderLabel)}</option>`);
+    }
+    options.forEach(opt => {
+      const priceLabel = opt.price ? ` (+${money(opt.price)})` : "";
+      const selected = opt.id === selectedValue ? "selected" : "";
+      parts.push(`<option value="${escapeHtml(opt.id)}" ${selected}>${escapeHtml(opt.label)}${priceLabel}</option>`);
+    });
+    if (!allowEmpty && !options.length){
+      parts.push(`<option value="">Unavailable</option>`);
+    }
+    return parts.join("");
+  }
+
   function validateAndApplyConstraints(){
     if (routeError){
       state.modelId = "";
-      state.colorId = "";
-      state.gearingId = "";
-      state.rackId = "";
-      state.lightsId = "";
-      setSelectOptions(els.model, [], "Invalid route");
-      setSelectOptions(els.color, [], "Unavailable");
-      setSelectOptions(els.gearing, [], "Unavailable");
-      setSelectOptions(els.rack, [], "Unavailable");
-      setSelectOptions(els.lights, [], "Unavailable");
-      els.model.disabled = true;
-      els.color.disabled = true;
-      els.gearing.disabled = true;
-      els.rack.disabled = true;
-      els.lights.disabled = true;
-      return { ok:false, msg:routeError, model:null, routeError:true };
+      state.selections = {};
+      return { ok:false, msg:routeError, model:null, routeError:true, groups: [] };
     }
 
     const model = getModel(forcedModelId);
     if (!model){
-      return { ok:false, msg:"Unsupported model route. Please use a valid configurator URL.", model:null, routeError:true };
+      return { ok:false, msg:"Unsupported model route. Please use a valid configurator URL.", model:null, routeError:true, groups: [] };
     }
 
     state.modelId = forcedModelId;
-    setSingleOption(els.model, { id: forcedModelId, label: model.label, price: 0 });
-    els.model.value = forcedModelId;
-    els.model.disabled = true;
-    els.model.dataset.fixed = "true";
-
-    const colorResult = applyOptions(els.color, getEnabledOptions(model, "colors"), "Select color…", state.colorId);
-    state.colorId = colorResult.value;
-    const gearingResult = applyOptions(els.gearing, getEnabledOptions(model, "gearing"), "Select gearing…", state.gearingId);
-    state.gearingId = gearingResult.value;
-    const rackResult = applyOptions(els.rack, getEnabledOptions(model, "rack"), "Select rack…", state.rackId);
-    state.rackId = rackResult.value;
-    const lightsResult = applyOptions(els.lights, getEnabledOptions(model, "lights"), "Select lights…", state.lightsId);
-    state.lightsId = lightsResult.value;
-
-    els.color.value = state.colorId;
-    els.gearing.value = state.gearingId;
-    els.rack.value = state.rackId;
-    els.lights.value = state.lightsId;
-
-    const missing = [];
-    if (!state.modelId) missing.push("Model");
-    if (!state.colorId) missing.push("Color");
-    if (!state.gearingId) missing.push("Gearing");
-    if (!state.rackId) missing.push("Rack");
-    if (!state.lightsId) missing.push("Lights");
-
-    if (missing.length){
-      return { ok:false, msg:"Missing: " + missing.join(", ") + ".", model };
+    const groupKeys = model.groupsOrder || [];
+    const groupStates = [];
+    let changed = false;
+    groupKeys.forEach((key) => {
+      const group = model.groups[key] || { label: titleCaseFromKey(key), required: true, options: [] };
+      const selection = state.selections[key] || "";
+      const ensured = ensureSelection(model, key, selection);
+      if (ensured.value !== selection){
+        state.selections[key] = ensured.value;
+        changed = true;
+      }
+      const required = group.required !== false;
+      const isComplete = required ? !!ensured.value : true;
+      groupStates.push({
+        key,
+        group,
+        enabled: ensured.enabled,
+        selectedId: ensured.value,
+        selectedOption: ensured.selected,
+        fixed: ensured.fixed,
+        disabled: ensured.disabled,
+        required,
+        isComplete
+      });
+    });
+    if (changed){
+      saveState();
     }
-    return { ok:true, msg:"Ready to order.", model };
+    const missing = groupStates.filter(item => item.required && !item.selectedId)
+      .map(item => item.group.label || titleCaseFromKey(item.key));
+    if (missing.length){
+      return { ok:false, msg:`Missing: ${missing.join(", ")}.`, model, groups: groupStates };
+    }
+    return { ok:true, msg:"Ready to order.", model, groups: groupStates };
   }
 
   function buildAttribute116Value(){
     const model = getModel(state.modelId);
-    const selections = [
-      { label: "Model", value: model ? model.label : "" },
-      { label: "Colour", value: findOptionLabel(model, "colors", state.colorId) },
-      { label: "Speed", value: findOptionLabel(model, "gearing", state.gearingId) },
-      { label: "Rack", value: findOptionLabel(model, "rack", state.rackId) },
-      { label: "Light", value: findOptionLabel(model, "lights", state.lightsId) }
-    ];
-
     const missing = [];
-    const parts = selections.map(({ label, value }) => {
-      if (!value){
-        missing.push(label);
-        return "";
-      }
-      return `${label}: ${value}`;
-    });
+    const parts = [];
+    if (!model || !model.label){
+      missing.push("Model");
+    }else{
+      parts.push(`Model: ${model.label}`);
+    }
+    if (model){
+      (model.groupsOrder || []).forEach((key) => {
+        const group = model.groups[key];
+        if (!group) return;
+        const selectedId = state.selections[key] || "";
+        if (!selectedId){
+          if (group.required !== false){
+            missing.push(group.label || titleCaseFromKey(key));
+          }
+          return;
+        }
+        const option = findOption(model, key, selectedId);
+        if (!option) return;
+        const priceTag = option.price ? ` (+${money(option.price)})` : "";
+        parts.push(`${group.label || titleCaseFromKey(key)}: ${option.label}${priceTag}`);
+      });
+    }
 
     if (missing.length){
       return { missing, value: "" };
@@ -965,8 +1013,8 @@
   }
 
   function findOption(model, groupKey, id){
-    if (!model || !model.options || !model.options[groupKey]) return null;
-    return model.options[groupKey].find(opt => opt.id === id) || null;
+    if (!model || !model.groups || !model.groups[groupKey]) return null;
+    return (model.groups[groupKey].options || []).find(opt => opt.id === id) || null;
   }
 
   function findOptionLabel(model, groupKey, id){
@@ -976,23 +1024,24 @@
 
   function calc(){
     const model = getModel(state.modelId);
-    const color = findOption(model, "colors", state.colorId);
-    const gearing = findOption(model, "gearing", state.gearingId);
-    const rack = findOption(model, "rack", state.rackId);
-    const lights = findOption(model, "lights", state.lightsId);
-
     const base = 0;
-    const options =
-      (color ? color.price : 0) +
-      (gearing ? gearing.price : 0) +
-      (rack ? rack.price : 0) +
-      (lights ? lights.price : 0);
+    let optionsTotal = 0;
+    if (model){
+      (model.groupsOrder || []).forEach((key) => {
+        const selectedId = state.selections[key];
+        if (!selectedId) return;
+        const option = findOption(model, key, selectedId);
+        if (option && option.price){
+          optionsTotal += option.price;
+        }
+      });
+    }
 
-    const unit = base + options;
+    const unit = base + optionsTotal;
     const qty = normalizeQty(state.qty);
     const total = unit * qty;
 
-    return { base, options, unit, qty, total, model, color, gearing, rack, lights };
+    return { base, options: optionsTotal, unit, qty, total, model };
   }
 
   function saveState(){
@@ -1006,26 +1055,26 @@
       const obj = JSON.parse(raw);
       if (!obj) return;
       state.modelId = obj.modelId || "";
-      state.colorId = obj.colorId || "";
-      state.gearingId = obj.gearingId || "";
-      state.rackId = obj.rackId || "";
-      state.lightsId = obj.lightsId || "";
+      if (obj.selections && typeof obj.selections === "object"){
+        state.selections = { ...obj.selections };
+      }else{
+        state.selections = {
+          colors: obj.colorId || "",
+          gearing: obj.gearingId || "",
+          rack: obj.rackId || "",
+          lights: obj.lightsId || ""
+        };
+      }
       state.qty = normalizeQty(obj.qty || 1);
       state.notes = obj.notes || "";
       if (forcedModelId){
         if (state.modelId !== forcedModelId){
-          state.colorId = "";
-          state.gearingId = "";
-          state.rackId = "";
-          state.lightsId = "";
+          state.selections = {};
         }
         state.modelId = forcedModelId;
       }else{
         state.modelId = "";
-        state.colorId = "";
-        state.gearingId = "";
-        state.rackId = "";
-        state.lightsId = "";
+        state.selections = {};
       }
     }catch(e){}
   }
@@ -1071,30 +1120,31 @@
     let changed = false;
     const model = getModel(forcedModelId);
     if (!model){
-      if (state.modelId || state.colorId || state.gearingId || state.rackId || state.lightsId){
+      if (state.modelId || Object.keys(state.selections || {}).length){
         changed = true;
       }
       state.modelId = "";
-      state.colorId = "";
-      state.gearingId = "";
-      state.rackId = "";
-      state.lightsId = "";
+      state.selections = {};
     }else{
       state.modelId = forcedModelId;
-      const groups = [
-        { key: "colors", field: "colorId" },
-        { key: "gearing", field: "gearingId" },
-        { key: "rack", field: "rackId" },
-        { key: "lights", field: "lightsId" }
-      ];
-      groups.forEach(({ key, field }) => {
+      const nextSelections = {};
+      (model.groupsOrder || []).forEach((key) => {
         const enabledOptions = getEnabledOptions(model, key);
-        const isAvailable = enabledOptions.some(opt => opt.id === state[field]);
-        if (!isAvailable){
-          if (state[field]) changed = true;
-          state[field] = "";
+        const selectedId = state.selections[key] || "";
+        if (selectedId && enabledOptions.some(opt => opt.id === selectedId)){
+          nextSelections[key] = selectedId;
+        }else if (enabledOptions.length === 1){
+          nextSelections[key] = enabledOptions[0].id;
+          if (state.selections[key] !== nextSelections[key]) changed = true;
+        }else if (state.selections[key]){
+          changed = true;
         }
       });
+      const removedSelections = Object.keys(state.selections || {}).filter((key) => !(model.groupsOrder || []).includes(key));
+      if (removedSelections.length){
+        changed = true;
+      }
+      state.selections = nextSelections;
     }
     if (changed){
       saveState();
@@ -1161,7 +1211,7 @@
 
   async function loadConfigFromSheet(useFallbackOnError){
     try{
-      CONFIG = await fetchConfigFromSheet();
+      CONFIG = normalizeConfig(await fetchConfigFromSheet());
       reconcileSelections();
       renderBuyer();
       renderAdmin();
@@ -1170,7 +1220,7 @@
     }catch(err){
       console.error("Failed to load config from sheet.", err, err && err.responseText ? err.responseText : "");
       if (useFallbackOnError){
-        CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        CONFIG = normalizeConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
         reconcileSelections();
         renderBuyer();
         renderAdmin();
@@ -1211,23 +1261,46 @@
       return errors;
     }
     Object.entries(config.models).forEach(([modelId, model]) => {
-      GROUPS.forEach(group => {
-        const options = model.options && model.options[group.key] ? model.options[group.key] : [];
+      if (!model.groups || !Array.isArray(model.groupsOrder)){
+        errors.push(`${modelId} groups/groupsOrder missing.`);
+        return;
+      }
+      const orderSet = new Set();
+      model.groupsOrder.forEach((key) => {
+        if (!/^[a-z0-9_-]+$/.test(key)){
+          errors.push(`${modelId} group key "${key}" must be lowercase letters, numbers, dashes, or underscores.`);
+        }
+        if (orderSet.has(key)){
+          errors.push(`${modelId} group key "${key}" appears multiple times in order.`);
+        }
+        orderSet.add(key);
+        const group = model.groups[key];
+        if (!group){
+          errors.push(`${modelId} group "${key}" missing from groups.`);
+          return;
+        }
+        if (!group.label){
+          errors.push(`${modelId} group "${key}": label is required.`);
+        }
+        if (typeof group.required !== "boolean"){
+          errors.push(`${modelId} group "${key}": required must be true/false.`);
+        }
+        const options = Array.isArray(group.options) ? group.options : [];
         const seen = new Set();
         options.forEach((opt, index) => {
           if (!opt.id){
-            errors.push(`${modelId} ${group.label} option #${index + 1}: id is required.`);
+            errors.push(`${modelId} ${group.label || key} option #${index + 1}: id is required.`);
           }else if (seen.has(opt.id)){
-            errors.push(`${modelId} ${group.label} option id "${opt.id}" is duplicated.`);
+            errors.push(`${modelId} ${group.label || key} option id "${opt.id}" is duplicated.`);
           }else{
             seen.add(opt.id);
           }
           if (opt.imageUrl && !/^https?:\/\//i.test(opt.imageUrl)){
-            errors.push(`${modelId} ${group.label} option "${opt.id}": imageUrl must start with http:// or https://`);
+            errors.push(`${modelId} ${group.label || key} option "${opt.id}": imageUrl must start with http:// or https://`);
           }
           const price = Number(opt.price);
           if (!Number.isFinite(price) || price < 0){
-            errors.push(`${modelId} ${group.label} option "${opt.id}": price must be a number >= 0`);
+            errors.push(`${modelId} ${group.label || key} option "${opt.id}": price must be a number >= 0`);
           }
         });
       });
@@ -1256,41 +1329,107 @@
     }
     els.btnOrder.disabled = !v.ok;
 
-    els.metaModel.textContent = metaWithFixed(c.model ? c.model.label : "", "Choose a base model", els.model);
-    els.priceModel.textContent = c.model ? money(0) : "—";
-    els.metaColor.textContent = metaWithFixed(c.color ? c.color.label : "", "Pick a frame color", els.color);
-    els.priceColor.textContent = c.color ? (c.color.price ? "+"+money(c.color.price) : money(0)) : "—";
-    els.metaGearing.textContent = metaWithFixed(c.gearing ? c.gearing.label : "", "Select gearing", els.gearing);
-    els.priceGearing.textContent = c.gearing ? (c.gearing.price ? "+"+money(c.gearing.price) : money(0)) : "—";
-    els.metaRack.textContent = metaWithFixed(c.rack ? c.rack.label : "", "Choose a rack", els.rack);
-    els.priceRack.textContent = c.rack ? (c.rack.price ? "+"+money(c.rack.price) : money(0)) : "—";
-    els.metaLights.textContent = metaWithFixed(c.lights ? c.lights.label : "", "Add lights", els.lights);
-    els.priceLights.textContent = c.lights ? (c.lights.price ? "+"+money(c.lights.price) : money(0)) : "—";
+    const steps = [];
+    let stepNumber = 1;
+    const modelLabel = v.model ? v.model.label : "";
+    const modelMeta = modelLabel ? modelLabel : "Choose a base model";
+    steps.push(`
+      <div class="step">
+        <div class="shd">
+          <span class="pill ok">${stepNumber}</span>
+          <div style="flex:1">
+            <div class="name">Model</div>
+            <div class="meta">${escapeHtml(modelMeta)}</div>
+          </div>
+          <div class="meta">—</div>
+        </div>
+        <div class="sbd">
+          <label>Model
+            <select data-role="model" disabled>
+              ${v.model ? `<option value="${escapeHtml(state.modelId)}">${escapeHtml(v.model.label)}</option>` : `<option value="">Invalid route</option>`}
+            </select>
+          </label>
+        </div>
+      </div>
+    `);
+    stepNumber += 1;
 
-    updatePill(els.pillModel, !!state.modelId);
-    updatePill(els.pillColor, !!state.colorId);
-    updatePill(els.pillGearing, !!state.gearingId);
-    updatePill(els.pillRack, !!state.rackId);
-    updatePill(els.pillLights, !!state.lightsId);
+    (v.groups || []).forEach((groupState) => {
+      const group = groupState.group;
+      const label = group.label || titleCaseFromKey(groupState.key);
+      const selected = groupState.selectedOption;
+      const metaText = selected ? selected.label : (groupState.required ? `Select ${label.toLowerCase()}` : "Optional");
+      const priceText = selected ? (selected.price ? `+${money(selected.price)}` : money(0)) : "—";
+      const showOk = groupState.isComplete;
+      const selectOptions = buildOptionOptions(groupState.enabled, groupState.selectedId, `Select ${label.toLowerCase()}…`, !groupState.fixed);
+      const fixedAttr = groupState.fixed ? "data-fixed=\"true\"" : "data-fixed=\"false\"";
+      const disabledAttr = groupState.disabled ? "disabled" : "";
+      const previewId = `preview-${groupState.key}`;
+      steps.push(`
+        <div class="step">
+          <div class="shd">
+            <span class="pill ${showOk ? "ok" : ""}">${stepNumber}</span>
+            <div style="flex:1">
+              <div class="name">${escapeHtml(label)}</div>
+              <div class="meta">${escapeHtml(metaWithFixed(selected ? selected.label : "", metaText, { dataset: { fixed: groupState.fixed ? "true" : "false" } }))}</div>
+            </div>
+            <div class="meta">${escapeHtml(priceText)}</div>
+          </div>
+          <div class="sbd">
+            <label>${escapeHtml(label)}
+              <select data-group="${escapeHtml(groupState.key)}" ${fixedAttr} ${disabledAttr}>
+                ${selectOptions}
+              </select>
+            </label>
+            <img id="${previewId}" class="option-preview" alt="Selected ${escapeHtml(label)} preview" />
+          </div>
+        </div>
+      `);
+      stepNumber += 1;
+    });
+
+    steps.push(`
+      <div class="step">
+        <div class="shd">
+          <span class="pill ok">${stepNumber}</span>
+          <div style="flex:1">
+            <div class="name">Quantity</div>
+            <div class="meta">How many bikes</div>
+          </div>
+          <div class="meta">—</div>
+        </div>
+        <div class="sbd">
+          <label>Qty
+            <input id="qtyInput" type="number" min="1" step="1" value="${escapeHtml(String(state.qty))}" />
+          </label>
+          <label style="margin-top:10px;">Notes (optional)
+            <textarea id="notesInput" rows="3" placeholder="Internal notes...">${escapeHtml(state.notes || "")}</textarea>
+          </label>
+        </div>
+      </div>
+    `);
+
+    els.stepsGrid.innerHTML = steps.join("");
+
+    (v.groups || []).forEach((groupState) => {
+      const previewEl = document.getElementById(`preview-${groupState.key}`);
+      updatePreview(previewEl, groupState.selectedOption);
+    });
 
     els.selectionList.innerHTML = "";
     const addLi = (label, val) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span class="muted">${label}:</span> ${val}`;
+      li.innerHTML = `<span class="muted">${escapeHtml(label)}:</span> ${escapeHtml(val)}`;
       els.selectionList.appendChild(li);
     };
     if (c.model) addLi("Model", c.model.label);
-    if (c.color) addLi("Color", c.color.label);
-    if (c.gearing) addLi("Gearing", c.gearing.label);
-    if (c.rack) addLi("Rack", c.rack.label);
-    if (c.lights) addLi("Lights", c.lights.label);
+    (v.groups || []).forEach((groupState) => {
+      if (groupState.selectedOption){
+        addLi(groupState.group.label || titleCaseFromKey(groupState.key), groupState.selectedOption.label);
+      }
+    });
     addLi("Qty", String(c.qty));
     if (state.notes && state.notes.trim()) addLi("Notes", state.notes.trim());
-
-    updatePreview(els.colorPreview, c.color);
-    updatePreview(els.gearingPreview, c.gearing);
-    updatePreview(els.rackPreview, c.rack);
-    updatePreview(els.lightsPreview, c.lights);
 
     saveState();
   }
@@ -1315,31 +1454,70 @@
     });
     els.adminModelSelect.value = adminState.modelId;
 
-    els.adminTabs.innerHTML = "";
-    GROUPS.forEach(group => {
-      const btn = document.createElement("button");
-      btn.textContent = group.label;
-      btn.dataset.group = group.key;
-      if (adminState.activeGroup === group.key){
-        btn.classList.add("active");
-      }
-      els.adminTabs.appendChild(btn);
-    });
-
     const model = CONFIG.models[adminState.modelId];
-    els.adminSections.innerHTML = "";
+    const groupsOrder = model.groupsOrder || [];
+    const groups = model.groups || {};
+    if (!adminState.activeGroup || !groupsOrder.includes(adminState.activeGroup)){
+      adminState.activeGroup = groupsOrder[0] || "";
+    }
 
-    GROUPS.forEach(group => {
-      const options = model.options[group.key] || [];
-      const section = document.createElement("div");
-      section.className = "admin-section";
-      section.style.display = adminState.activeGroup === group.key ? "block" : "none";
-      section.dataset.group = group.key;
-      section.innerHTML = `
-        <div class="line" style="margin-bottom:8px;">
-          <strong>${group.label}</strong>
-          <button class="primary" data-action="add-option" data-group="${group.key}">Add option</button>
-        </div>
+    els.adminGroupsSection.innerHTML = `
+      <div class="line" style="margin-bottom:8px;">
+        <strong>Option Groups</strong>
+      </div>
+      <div class="admin-help" style="margin-bottom:10px;">Manage group order, labels, and required flags.</div>
+      ${groupsOrder.map((key, index) => {
+        const group = groups[key] || { label: titleCaseFromKey(key), required: true };
+        return `
+          <div class="admin-group-row" data-group="${escapeHtml(key)}">
+            <label>Group key
+              <input type="text" value="${escapeHtml(key)}" data-field="groupKey" disabled>
+            </label>
+            <label>Label
+              <input type="text" value="${escapeHtml(group.label || "")}" data-field="groupLabel">
+            </label>
+            <label>Required
+              <input type="checkbox" data-field="groupRequired" ${group.required !== false ? "checked" : ""}>
+            </label>
+            <div class="admin-row-actions">
+              <button data-action="group-move-up" ${index === 0 ? "disabled" : ""}>Up</button>
+              <button data-action="group-move-down" ${index === groupsOrder.length - 1 ? "disabled" : ""}>Down</button>
+              <button data-action="group-delete" class="danger">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("")}
+      <div class="hr" style="margin:10px 0;"></div>
+      <div class="admin-inline">
+        <label class="small">Group key
+          <input id="adminNewGroupKey" type="text" placeholder="saddle">
+        </label>
+        <label>Group label
+          <input id="adminNewGroupLabel" type="text" placeholder="Saddle">
+        </label>
+        <label class="small">Required
+          <input id="adminNewGroupRequired" type="checkbox" checked>
+        </label>
+        <button class="primary" data-action="group-add">Add Group</button>
+      </div>
+      <div class="admin-help">Key must be lowercase letters, numbers, dashes, or underscores. Example: saddle.</div>
+    `;
+
+    const activeGroup = adminState.activeGroup;
+    const activeOptions = activeGroup ? (groups[activeGroup]?.options || []) : [];
+    els.adminOptionsSection.innerHTML = `
+      <div class="line" style="margin-bottom:8px;">
+        <strong>Options Editor</strong>
+        ${activeGroup ? `<button class="primary" data-action="option-add" data-group="${escapeHtml(activeGroup)}">Add option</button>` : ""}
+      </div>
+      <div class="admin-inline" style="margin-bottom:10px;">
+        <label>Edit group
+          <select id="adminGroupSelect">
+            ${groupsOrder.map((key) => `<option value="${escapeHtml(key)}">${escapeHtml(groups[key]?.label || titleCaseFromKey(key))}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      ${activeGroup ? `
         <table class="admin-table">
           <thead>
             <tr>
@@ -1352,8 +1530,8 @@
             </tr>
           </thead>
           <tbody>
-            ${options.map((opt, index) => `
-              <tr data-index="${index}" data-group="${group.key}">
+            ${activeOptions.map((opt, index) => `
+              <tr data-index="${index}" data-group="${escapeHtml(activeGroup)}">
                 <td><input type="text" value="${escapeHtml(opt.id)}" data-field="id"></td>
                 <td><input type="text" value="${escapeHtml(opt.label)}" data-field="label"></td>
                 <td><input type="number" min="0" step="1" value="${Number.isFinite(opt.price) ? opt.price : 0}" data-field="price"></td>
@@ -1361,18 +1539,22 @@
                 <td style="text-align:center;"><input type="checkbox" ${opt.enabled ? "checked" : ""} data-field="enabled"></td>
                 <td>
                   <div class="admin-row-actions">
-                    <button data-action="move-up">Up</button>
-                    <button data-action="move-down">Down</button>
-                    <button data-action="delete" class="danger">Delete</button>
+                    <button data-action="option-move-up" ${index === 0 ? "disabled" : ""}>Up</button>
+                    <button data-action="option-move-down" ${index === activeOptions.length - 1 ? "disabled" : ""}>Down</button>
+                    <button data-action="option-delete" class="danger">Delete</button>
                   </div>
                 </td>
               </tr>
             `).join("")}
           </tbody>
         </table>
-      `;
-      els.adminSections.appendChild(section);
-    });
+      ` : `<div class="admin-help">Add a group to start editing options.</div>`}
+    `;
+
+    const adminGroupSelect = document.getElementById("adminGroupSelect");
+    if (adminGroupSelect){
+      adminGroupSelect.value = activeGroup;
+    }
     updateAdminStatus();
   }
 
@@ -1442,43 +1624,33 @@
   // =========================
   // EVENTS
   // =========================
-  function initSelects(){
-    if (forcedModelId){
-      const model = getModel(forcedModelId);
-      if (model){
-        setSingleOption(els.model, { id: forcedModelId, label: model.label, price: 0 });
-        els.model.value = forcedModelId;
-      }else{
-        setSelectOptions(els.model, [], "Invalid route");
-      }
-    }else{
-      setSelectOptions(els.model, [], "Invalid route");
+  els.stepsGrid.addEventListener("change", (e)=>{
+    const select = e.target.closest("select");
+    if (!select) return;
+    const groupKey = select.dataset.group;
+    if (groupKey){
+      state.selections[groupKey] = select.value;
+      renderBuyer();
     }
-    setSelectOptions(els.color, [], "Select color…");
-    setSelectOptions(els.gearing, [], "Select gearing…");
-    setSelectOptions(els.rack, [], "Select rack…");
-    setSelectOptions(els.lights, [], "Select lights…");
-  }
+  });
 
-  els.model.addEventListener("change", (e)=>{ state.modelId = e.target.value; renderBuyer(); });
-  els.color.addEventListener("change", (e)=>{ state.colorId = e.target.value; renderBuyer(); });
-  els.gearing.addEventListener("change", (e)=>{ state.gearingId = e.target.value; renderBuyer(); });
-  els.rack.addEventListener("change", (e)=>{ state.rackId = e.target.value; renderBuyer(); });
-  els.lights.addEventListener("change", (e)=>{ state.lightsId = e.target.value; renderBuyer(); });
-  els.qty.addEventListener("input", (e)=>{ state.qty = normalizeQty(e.target.value); renderBuyer(); });
-  els.notes.addEventListener("input", (e)=>{ state.notes = e.target.value || ""; renderBuyer(); });
+  els.stepsGrid.addEventListener("input", (e)=>{
+    const target = e.target;
+    if (target && target.id === "qtyInput"){
+      state.qty = normalizeQty(target.value);
+      renderBuyer();
+    }
+    if (target && target.id === "notesInput"){
+      state.notes = target.value || "";
+      renderBuyer();
+    }
+  });
 
   els.btnReset.addEventListener("click", ()=>{
     state.modelId = "";
-    state.colorId = "";
-    state.gearingId = "";
-    state.rackId = "";
-    state.lightsId = "";
+    state.selections = {};
     state.qty = 1;
     state.notes = "";
-    els.qty.value = "1";
-    els.notes.value = "";
-    initSelects();
     renderBuyer();
     toast("Reset complete.");
   });
@@ -1548,7 +1720,7 @@
 
   async function refreshConfigFromSheet(){
     try{
-      CONFIG = await fetchConfigFromSheet();
+      CONFIG = normalizeConfig(await fetchConfigFromSheet());
       reconcileSelections();
       renderBuyer();
       renderAdmin();
@@ -1571,7 +1743,7 @@
   });
 
   els.btnResetDefaults.addEventListener("click", ()=>{
-    CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    CONFIG = normalizeConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
     reconcileSelections();
     renderBuyer();
     renderAdmin();
@@ -1587,22 +1759,110 @@
     renderAdmin();
   });
 
-  els.adminTabs.addEventListener("click", (e)=>{
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    adminState.activeGroup = btn.dataset.group || adminState.activeGroup;
+  els.adminGroupsSection.addEventListener("click", (e)=>{
+    const actionBtn = e.target.closest("button");
+    if (!actionBtn) return;
+    const action = actionBtn.dataset.action;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model) return;
+    if (action === "group-add"){
+      const keyInput = document.getElementById("adminNewGroupKey");
+      const labelInput = document.getElementById("adminNewGroupLabel");
+      const requiredInput = document.getElementById("adminNewGroupRequired");
+      const key = (keyInput?.value || "").trim();
+      const label = (labelInput?.value || "").trim();
+      const required = requiredInput ? requiredInput.checked : true;
+      if (!/^[a-z0-9_-]+$/.test(key)){
+        toast("Group key must be lowercase letters, numbers, dashes, or underscores.");
+        return;
+      }
+      if (model.groups && model.groups[key]){
+        toast(`Group key "${key}" already exists.`);
+        return;
+      }
+      if (!label){
+        toast("Group label is required.");
+        return;
+      }
+      model.groups = model.groups || {};
+      model.groups[key] = {
+        label,
+        required,
+        options: []
+      };
+      model.groupsOrder = model.groupsOrder || [];
+      model.groupsOrder.push(key);
+      adminState.activeGroup = key;
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+    const row = actionBtn.closest(".admin-group-row");
+    const groupKey = row ? row.dataset.group : "";
+    if (!groupKey) return;
+    if (action === "group-delete"){
+      model.groupsOrder = (model.groupsOrder || []).filter((key) => key !== groupKey);
+      if (model.groups){
+        delete model.groups[groupKey];
+      }
+      if (state.selections && state.selections[groupKey]){
+        delete state.selections[groupKey];
+      }
+      if (adminState.activeGroup === groupKey){
+        adminState.activeGroup = model.groupsOrder[0] || "";
+      }
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+    const index = model.groupsOrder.indexOf(groupKey);
+    if (action === "group-move-up" && index > 0){
+      [model.groupsOrder[index - 1], model.groupsOrder[index]] = [model.groupsOrder[index], model.groupsOrder[index - 1]];
+    }
+    if (action === "group-move-down" && index < model.groupsOrder.length - 1){
+      [model.groupsOrder[index + 1], model.groupsOrder[index]] = [model.groupsOrder[index], model.groupsOrder[index + 1]];
+    }
+    renderBuyer();
     renderAdmin();
   });
 
-  els.adminSections.addEventListener("click", (e)=>{
+  els.adminGroupsSection.addEventListener("input", (e)=>{
+    const input = e.target;
+    const row = input.closest(".admin-group-row");
+    if (!row) return;
+    const groupKey = row.dataset.group;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model || !model.groups || !model.groups[groupKey]) return;
+    const group = model.groups[groupKey];
+    const field = input.dataset.field;
+    if (field === "groupLabel"){
+      group.label = input.value.trim();
+    }
+    if (field === "groupRequired"){
+      group.required = input.checked;
+    }
+    updateAdminStatus();
+    renderBuyer();
+  });
+
+  els.adminOptionsSection.addEventListener("change", (e)=>{
+    const select = e.target;
+    if (select && select.id === "adminGroupSelect"){
+      adminState.activeGroup = select.value;
+      renderAdmin();
+    }
+  });
+
+  els.adminOptionsSection.addEventListener("click", (e)=>{
     const actionBtn = e.target.closest("button");
     if (!actionBtn) return;
     const action = actionBtn.dataset.action;
     const group = actionBtn.dataset.group || actionBtn.closest("tr")?.dataset.group;
     if (!group) return;
     const model = CONFIG.models[adminState.modelId];
-    const options = model.options[group];
-    if (action === "add-option"){
+    if (!model || !model.groups || !model.groups[group]) return;
+    const options = model.groups[group].options || [];
+    if (action === "option-add"){
       options.push({
         id: `new-${Date.now()}`,
         label: "",
@@ -1610,25 +1870,27 @@
         imageUrl: "",
         enabled: true
       });
+      renderBuyer();
       renderAdmin();
       return;
     }
     const row = actionBtn.closest("tr");
     const index = row ? Number(row.dataset.index) : -1;
     if (index < 0) return;
-    if (action === "delete"){
+    if (action === "option-delete"){
       options.splice(index, 1);
     }
-    if (action === "move-up" && index > 0){
+    if (action === "option-move-up" && index > 0){
       [options[index - 1], options[index]] = [options[index], options[index - 1]];
     }
-    if (action === "move-down" && index < options.length - 1){
+    if (action === "option-move-down" && index < options.length - 1){
       [options[index + 1], options[index]] = [options[index], options[index + 1]];
     }
+    renderBuyer();
     renderAdmin();
   });
 
-  els.adminSections.addEventListener("input", (e)=>{
+  els.adminOptionsSection.addEventListener("input", (e)=>{
     const input = e.target;
     const row = input.closest("tr");
     if (!row) return;
@@ -1636,8 +1898,8 @@
     const index = Number(row.dataset.index);
     const field = input.dataset.field;
     const model = CONFIG.models[adminState.modelId];
-    if (!model || !model.options[group] || !model.options[group][index]) return;
-    const option = model.options[group][index];
+    if (!model || !model.groups || !model.groups[group] || !model.groups[group].options[index]) return;
+    const option = model.groups[group].options[index];
     if (field === "enabled"){
       option.enabled = input.checked;
     }else if (field === "price"){
@@ -1650,6 +1912,7 @@
       option.imageUrl = input.value.trim();
     }
     updateAdminStatus();
+    renderBuyer();
   });
 
   // =========================
@@ -1657,9 +1920,6 @@
   // =========================
   loadState();
   loadAdminState();
-  initSelects();
-  els.qty.value = String(state.qty);
-  els.notes.value = state.notes || "";
   renderBuyer();
   if (routeError){
     toast(routeError);
