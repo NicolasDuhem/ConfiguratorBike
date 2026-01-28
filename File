@@ -6,23 +6,21 @@
   <title>Bike Configurator (HTML Only)</title>
   <style>
     :root{
-      --bg:#0b1020;
-      --text:#e8ecff;
-      --muted:#a9b2da;
-      --accent:#7aa2ff;
-      --ok:#39d98a;
-      --bad:#ff5c77;
-      --border:rgba(255,255,255,.10);
-      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --bg:#f5f6f8;
+      --text:#101218;
+      --muted:#5b6475;
+      --accent:#1f4bff;
+      --ok:#1f9d67;
+      --bad:#d64550;
+      --border:rgba(16,18,24,.12);
+      --shadow: 0 12px 30px rgba(15,23,42,.12);
       --radius: 16px;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1200px 800px at 20% 10%, rgba(122,162,255,.25), transparent 60%),
-                  radial-gradient(900px 700px at 80% 20%, rgba(57,217,138,.18), transparent 55%),
-                  linear-gradient(180deg, #070a14, var(--bg));
+      background: var(--bg);
       color:var(--text);
     }
     .wrap{
@@ -50,29 +48,29 @@
     }
     button{
       appearance:none; border:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      background: #fff;
       color:var(--text);
       padding: 10px 12px;
       border-radius: 12px;
       cursor:pointer;
       font-weight:600;
       font-size:13px;
-      box-shadow: 0 6px 16px rgba(0,0,0,.25);
+      box-shadow: 0 6px 16px rgba(15,23,42,.08);
       transition: transform .06s ease, border-color .2s ease, background .2s ease;
     }
-    button:hover{border-color: rgba(122,162,255,.45)}
+    button:hover{border-color: rgba(31,75,255,.35)}
     button:active{transform: translateY(1px)}
     button.primary{
-      border-color: rgba(122,162,255,.55);
-      background: linear-gradient(180deg, rgba(122,162,255,.28), rgba(122,162,255,.10));
+      border-color: rgba(31,75,255,.35);
+      background: rgba(31,75,255,.08);
     }
     button.success{
-      border-color: rgba(57,217,138,.55);
-      background: linear-gradient(180deg, rgba(57,217,138,.22), rgba(57,217,138,.08));
+      border-color: rgba(31,157,103,.35);
+      background: rgba(31,157,103,.10);
     }
 
     .panel{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      background: #fff;
       border:1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -80,8 +78,8 @@
     }
     .panel .hd{
       padding: 14px 14px 10px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: #fafbff;
+      border-bottom: 1px solid var(--border);
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -97,30 +95,30 @@
     }
 
     .step{
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(15,23,51,.55);
+      border:1px solid var(--border);
+      background: #fff;
       border-radius: 14px;
       overflow:hidden;
     }
     .step .shd{
       padding: 12px 12px 10px;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
-      background: rgba(255,255,255,.03);
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: #fafbff;
+      border-bottom: 1px solid var(--border);
     }
     .pill{
       font-size: 12px;
       font-weight: 800;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(122,162,255,.14);
-      border:1px solid rgba(122,162,255,.25);
-      color: #dbe5ff;
+      background: rgba(31,75,255,.12);
+      border:1px solid rgba(31,75,255,.25);
+      color: #1f2d6a;
     }
     .pill.ok{
-      background: rgba(57,217,138,.14);
-      border-color: rgba(57,217,138,.25);
-      color:#d7ffef;
+      background: rgba(31,157,103,.12);
+      border-color: rgba(31,157,103,.25);
+      color:#0f5b3c;
     }
     .step .shd .name{font-weight: 800; font-size: 13px}
     .step .shd .meta{font-size:12px; color: var(--muted)}
@@ -138,49 +136,53 @@
     select, input[type="number"], textarea{
       width:100%;
       border-radius: 12px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(7,10,20,.45);
+      border:1px solid var(--border);
+      background: #fff;
       color: var(--text);
       padding: 10px 12px;
       outline:none;
       font-weight:700;
     }
+    select:disabled, input:disabled, textarea:disabled{
+      background: #f0f2f6;
+      color: #7c8597;
+    }
     select:focus, input:focus, textarea:focus{
-      border-color: rgba(122,162,255,.5);
-      box-shadow: 0 0 0 3px rgba(122,162,255,.12);
+      border-color: rgba(31,75,255,.5);
+      box-shadow: 0 0 0 3px rgba(31,75,255,.12);
     }
 
     .summary{display:flex; flex-direction:column; gap:12px}
     .totals{
       display:flex; flex-direction:column; gap:8px;
       padding: 12px;
-      background: rgba(7,10,20,.35);
-      border:1px solid rgba(255,255,255,.08);
+      background: #f7f8fb;
+      border:1px solid var(--border);
       border-radius: 14px;
     }
     .line{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size: 13px}
     .line strong{font-size: 14px}
-    .hr{height:1px; background: rgba(255,255,255,.08); margin:6px 0}
+    .hr{height:1px; background: var(--border); margin:6px 0}
     .items{
       padding: 12px;
-      background: rgba(7,10,20,.35);
-      border:1px solid rgba(255,255,255,.08);
+      background: #f7f8fb;
+      border:1px solid var(--border);
       border-radius: 14px;
     }
     .items ul{margin:0; padding-left: 18px}
-    .items li{margin:6px 0; color:#dfe6ff}
+    .items li{margin:6px 0; color:#1d2435}
     .muted{color:var(--muted)}
     .badge{
       display:inline-flex; align-items:center; gap:8px;
       font-size:12px; font-weight:800;
       padding: 8px 10px;
       border-radius: 999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
+      border:1px solid var(--border);
+      background: #fff;
       color: var(--text);
       width: fit-content;
     }
-    .dot{width:10px; height:10px; border-radius: 999px; background: rgba(255,255,255,.40)}
+    .dot{width:10px; height:10px; border-radius: 999px; background: rgba(16,18,24,.3)}
     .dot.ok{background: var(--ok)}
     .dot.bad{background: var(--bad)}
     .toast{
@@ -189,8 +191,8 @@
       bottom: 14px;
       padding: 10px 12px;
       border-radius: 12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(15,23,51,.92);
+      border:1px solid var(--border);
+      background: #fff;
       box-shadow: var(--shadow);
       font-size: 13px;
       display:none;
@@ -379,7 +381,7 @@
   const PRODUCT_ID = 114;
 
   // Your storefront home page (redirect after add-to-cart success)
-  const HOME_URL = "https://brompton-bicycle-limited-eu-sandbox-3.mybigcommerce.com/";
+  const HOME_URL = "https://store-tiznycmyx9-1826150.catalyst-sandbox-vercel.store/";
 
   // =========================
   // CONFIG DATA (UI only)
@@ -387,39 +389,95 @@
   const DATA = {
     currency: "EUR",
     models: [
-      { id:"c-line", name:"C Line", basePrice: 1550, allowedGearing:["2","6"], allowedRacks:["none","standard"], allowedLights:["none","battery","dynamo"] },
-      { id:"p-line", name:"P Line", basePrice: 2450, allowedGearing:["4","12"], allowedRacks:["none","light"], allowedLights:["none","battery","dynamo"] },
-      { id:"t-line", name:"T Line", basePrice: 4950, allowedGearing:["4","12"], allowedRacks:["none"], allowedLights:["none","battery"] }
+      {
+        id:"c-line",
+        name:"C Line",
+        basePrice: 0,
+        allowedColors:["black","red"],
+        allowedGearing:["1","4","12"],
+        allowedRacks:["yes","no"],
+        allowedLights:["battery","dynamo"]
+      },
+      {
+        id:"c-line-elec",
+        name:"C Line Electric",
+        basePrice: 0,
+        allowedColors:["blue-elec","green"],
+        allowedGearing:["4","12"],
+        allowedRacks:["yes"],
+        allowedLights:["battery-elec"]
+      },
+      {
+        id:"p-line",
+        name:"P Line",
+        basePrice: 0,
+        allowedColors:["yellow","raw-lacquer"],
+        allowedGearing:["2","4","8"],
+        allowedRacks:["no"],
+        allowedLights:["battery","dynamo"]
+      },
+      {
+        id:"p-line-elec",
+        name:"P Line Electric",
+        basePrice: 0,
+        allowedColors:["blue-elec","line-green"],
+        allowedGearing:["4","12"],
+        allowedRacks:["yes"],
+        allowedLights:["battery-elec"]
+      },
+      {
+        id:"g-line",
+        name:"G Line",
+        basePrice: 0,
+        allowedColors:["orange","sand","champagne"],
+        allowedGearing:["4","12"],
+        allowedRacks:["no"],
+        allowedLights:["battery"]
+      },
+      {
+        id:"g-line-elec",
+        name:"G Line Electric",
+        basePrice: 0,
+        allowedColors:["orange","sand","champagne"],
+        allowedGearing:["4","12"],
+        allowedRacks:["yes"],
+        allowedLights:["battery-elec"]
+      }
     ],
     colors: [
       { id:"black", name:"Black", price: 0 },
-      { id:"racing-green", name:"Racing Green", price: 0 },
-      { id:"ocean-blue", name:"Ocean Blue", price: 50 },
-      { id:"sunset-orange", name:"Sunset Orange", price: 50 },
-      { id:"custom", name:"Custom Paint", price: 350 }
+      { id:"red", name:"Red", price: 0 },
+      { id:"blue-elec", name:"Blue Electric", price: 0 },
+      { id:"green", name:"Green", price: 0 },
+      { id:"yellow", name:"Yellow", price: 0 },
+      { id:"raw-lacquer", name:"Raw Lacquer", price: 0 },
+      { id:"line-green", name:"Line Green", price: 0 },
+      { id:"orange", name:"Orange", price: 0 },
+      { id:"sand", name:"Sand", price: 0 },
+      { id:"champagne", name:"Champagne", price: 0 }
     ],
     gearing: [
+      { id:"1", name:"1-speed", price: 0 },
       { id:"2", name:"2-speed", price: 0 },
-      { id:"4", name:"4-speed", price: 120 },
-      { id:"6", name:"6-speed", price: 180 },
-      { id:"12", name:"12-speed", price: 350 }
+      { id:"4", name:"4-speed", price: 0 },
+      { id:"8", name:"8-speed", price: 0 },
+      { id:"12", name:"12-speed", price: 0 }
     ],
     racks: [
-      { id:"none", name:"No rack", price: 0 },
-      { id:"standard", name:"Standard rack", price: 140 },
-      { id:"light", name:"Light rack", price: 160 }
+      { id:"yes", name:"Rack included", price: 0 },
+      { id:"no", name:"No rack", price: 0 }
     ],
     lights: [
-      { id:"none", name:"No lights", price: 0 },
-      { id:"battery", name:"Battery lights", price: 60 },
-      { id:"dynamo", name:"Dynamo lighting", price: 220 }
+      { id:"battery", name:"Battery lights", price: 0 },
+      { id:"dynamo", name:"Dynamo lighting", price: 0 },
+      { id:"battery-elec", name:"Battery lights (Electric)", price: 0 }
     ]
   };
 
   // =========================
   // STATE
   // =========================
-  const STORAGE_KEY = "bike_configurator_b2b_v1";
+  const STORAGE_KEY = "bike_configurator_b2b_v2";
   const state = {
     modelId: "",
     colorId: "",
@@ -483,6 +541,26 @@
   // =========================
   // HELPERS
   // =========================
+  const ROUTE_MODEL_MAP = {
+    "/c-line-configurator": "c-line",
+    "/c-line-elec-configurator": "c-line-elec",
+    "/g-line-configurator": "g-line",
+    "/g-line-elec-configurator": "g-line-elec",
+    "/p-line-configurator": "p-line",
+    "/p-line-elec-configurator": "p-line-elec"
+  };
+
+  function getForcedModelFromPath(){
+    const rawPath = (window.location.pathname || "").toLowerCase();
+    const cleaned = rawPath.replace(/\/+$/, "") || "/";
+    return ROUTE_MODEL_MAP[cleaned] || "";
+  }
+
+  let forcedModelId = getForcedModelFromPath();
+  let routeError = forcedModelId
+    ? ""
+    : "This page URL does not match a valid configurator route. Please use a supported model URL.";
+
   function toast(msg){
     els.toast.textContent = msg;
     els.toast.style.display = "block";
@@ -522,35 +600,82 @@
     });
   }
 
-  function setSelectOptionsFiltered(selectEl, list, allowedIds, placeholder){
+  function setSingleOption(selectEl, item){
+    selectEl.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = item.id;
+    opt.textContent = item.name + (item.price ? ` (+${money(item.price)})` : "");
+    selectEl.appendChild(opt);
+  }
+
+  function applyAllowedOptions(selectEl, list, allowedIds, placeholder, currentValue){
     const filtered = list.filter(x => allowedIds.includes(x.id));
     setSelectOptions(selectEl, filtered, placeholder);
+    const isFixed = filtered.length === 1;
+    let nextValue = currentValue || "";
+    if (isFixed){
+      nextValue = filtered[0].id;
+    }else if (nextValue && !allowedIds.includes(nextValue)){
+      nextValue = "";
+    }
+    selectEl.disabled = isFixed;
+    selectEl.dataset.fixed = isFixed ? "true" : "false";
+    return { value: nextValue, fixed: isFixed, option: filtered[0] || null };
   }
 
   function updatePill(pillEl, ok){
     pillEl.classList.toggle("ok", !!ok);
   }
 
-  function validateAndApplyConstraints(){
-    const model = findById(DATA.models, state.modelId);
+  function metaWithFixed(label, fallback, selectEl){
+    if (!label) return fallback;
+    if (selectEl && selectEl.dataset.fixed === "true"){
+      return `${label} (fixed for this model)`;
+    }
+    return label;
+  }
 
-    if (!model){
-      return { ok:false, msg:"Choose a model to unlock compatible options.", model:null };
+  function validateAndApplyConstraints(){
+    if (routeError){
+      state.modelId = "";
+      state.colorId = "";
+      state.gearingId = "";
+      state.rackId = "";
+      state.lightsId = "";
+      setSelectOptions(els.model, [], "Invalid route");
+      setSelectOptions(els.color, [], "Unavailable");
+      setSelectOptions(els.gearing, [], "Unavailable");
+      setSelectOptions(els.rack, [], "Unavailable");
+      setSelectOptions(els.lights, [], "Unavailable");
+      els.model.disabled = true;
+      els.color.disabled = true;
+      els.gearing.disabled = true;
+      els.rack.disabled = true;
+      els.lights.disabled = true;
+      return { ok:false, msg:routeError, model:null, routeError:true };
     }
 
-    setSelectOptionsFiltered(els.gearing, DATA.gearing, model.allowedGearing, "Select gearing…");
-    setSelectOptionsFiltered(els.rack, DATA.racks, model.allowedRacks, "Select rack…");
-    setSelectOptionsFiltered(els.lights, DATA.lights, model.allowedLights, "Select lights…");
+    const model = findById(DATA.models, forcedModelId);
+    if (!model){
+      return { ok:false, msg:"Unsupported model route. Please use a valid configurator URL.", model:null, routeError:true };
+    }
 
-    setSelectOptions(els.color, DATA.colors, "Select color…");
+    state.modelId = model.id;
 
-    // invalidate incompatible
-    if (state.gearingId && !model.allowedGearing.includes(state.gearingId)) state.gearingId = "";
-    if (state.rackId && !model.allowedRacks.includes(state.rackId)) state.rackId = "";
-    if (state.lightsId && !model.allowedLights.includes(state.lightsId)) state.lightsId = "";
+    setSingleOption(els.model, { id:model.id, name:model.name, price:model.basePrice });
+    els.model.value = model.id;
+    els.model.disabled = true;
+    els.model.dataset.fixed = "true";
 
-    // reapply
-    els.model.value = state.modelId;
+    const colorResult = applyAllowedOptions(els.color, DATA.colors, model.allowedColors, "Select color…", state.colorId);
+    state.colorId = colorResult.value;
+    const gearingResult = applyAllowedOptions(els.gearing, DATA.gearing, model.allowedGearing, "Select gearing…", state.gearingId);
+    state.gearingId = gearingResult.value;
+    const rackResult = applyAllowedOptions(els.rack, DATA.racks, model.allowedRacks, "Select rack…", state.rackId);
+    state.rackId = rackResult.value;
+    const lightsResult = applyAllowedOptions(els.lights, DATA.lights, model.allowedLights, "Select lights…", state.lightsId);
+    state.lightsId = lightsResult.value;
+
     els.color.value = state.colorId;
     els.gearing.value = state.gearingId;
     els.rack.value = state.rackId;
@@ -595,6 +720,10 @@
     if (missing.length){
       return { missing, value: "" };
     }
+    const qtyValue = normalizeQty(state.qty);
+    const notesValue = (state.notes || "").trim();
+    parts.push(`Qty: ${qtyValue}`);
+    parts.push(`Notes: ${notesValue || "(none)"}`);
     return { missing, value: parts.join("\n") };
   }
 
@@ -636,6 +765,21 @@
       state.lightsId = obj.lightsId || "";
       state.qty = normalizeQty(obj.qty || 1);
       state.notes = obj.notes || "";
+      if (forcedModelId){
+        if (state.modelId !== forcedModelId){
+          state.colorId = "";
+          state.gearingId = "";
+          state.rackId = "";
+          state.lightsId = "";
+        }
+        state.modelId = forcedModelId;
+      }else{
+        state.modelId = "";
+        state.colorId = "";
+        state.gearingId = "";
+        state.rackId = "";
+        state.lightsId = "";
+      }
     }catch(e){}
   }
 
@@ -668,16 +812,17 @@
       els.validDot.className = "dot bad";
       els.validText.textContent = "Incomplete";
     }
+    els.btnOrder.disabled = !v.ok;
 
-    els.metaModel.textContent = c.model ? c.model.name : "Choose a base model";
+    els.metaModel.textContent = metaWithFixed(c.model ? c.model.name : "", "Choose a base model", els.model);
     els.priceModel.textContent = c.model ? money(c.model.basePrice) : "—";
-    els.metaColor.textContent = c.color ? c.color.name : "Pick a frame color";
+    els.metaColor.textContent = metaWithFixed(c.color ? c.color.name : "", "Pick a frame color", els.color);
     els.priceColor.textContent = c.color ? (c.color.price ? "+"+money(c.color.price) : money(0)) : "—";
-    els.metaGearing.textContent = c.gearing ? c.gearing.name : "Select gearing";
+    els.metaGearing.textContent = metaWithFixed(c.gearing ? c.gearing.name : "", "Select gearing", els.gearing);
     els.priceGearing.textContent = c.gearing ? (c.gearing.price ? "+"+money(c.gearing.price) : money(0)) : "—";
-    els.metaRack.textContent = c.rack ? c.rack.name : "Choose a rack";
+    els.metaRack.textContent = metaWithFixed(c.rack ? c.rack.name : "", "Choose a rack", els.rack);
     els.priceRack.textContent = c.rack ? (c.rack.price ? "+"+money(c.rack.price) : money(0)) : "—";
-    els.metaLights.textContent = c.lights ? c.lights.name : "Add lights";
+    els.metaLights.textContent = metaWithFixed(c.lights ? c.lights.name : "", "Add lights", els.lights);
     els.priceLights.textContent = c.lights ? (c.lights.price ? "+"+money(c.lights.price) : money(0)) : "—";
 
     updatePill(els.pillModel, !!state.modelId);
@@ -709,7 +854,7 @@
   function submitCartForm(qty, attribute116Value){
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = "/cart.php";
+    form.action = "https://store-tiznycmyx9-1826150.catalyst-sandbox-vercel.store/cart.php";
     form.target = "hiddenCartFrame";
 
     const addInput = (name, value) => {
@@ -734,17 +879,21 @@
   // EVENTS
   // =========================
   function initSelects(){
-    setSelectOptions(els.model, DATA.models.map(m=>({id:m.id, name:m.name, price:m.basePrice})), "Select model…");
-    setSelectOptions(els.color, DATA.colors, "Select color…");
-    setSelectOptions(els.gearing, DATA.gearing, "Select gearing…");
-    setSelectOptions(els.rack, DATA.racks, "Select rack…");
-    setSelectOptions(els.lights, DATA.lights, "Select lights…");
-
-    els.model.value = state.modelId;
-    els.color.value = state.colorId;
-    els.gearing.value = state.gearingId;
-    els.rack.value = state.rackId;
-    els.lights.value = state.lightsId;
+    if (forcedModelId){
+      const model = findById(DATA.models, forcedModelId);
+      if (model){
+        setSingleOption(els.model, { id:model.id, name:model.name, price:model.basePrice });
+        els.model.value = model.id;
+      }else{
+        setSelectOptions(els.model, [], "Invalid route");
+      }
+    }else{
+      setSelectOptions(els.model, [], "Invalid route");
+    }
+    setSelectOptions(els.color, [], "Select color…");
+    setSelectOptions(els.gearing, [], "Select gearing…");
+    setSelectOptions(els.rack, [], "Select rack…");
+    setSelectOptions(els.lights, [], "Select lights…");
   }
 
   els.model.addEventListener("change", (e)=>{ state.modelId = e.target.value; render(); });
@@ -809,6 +958,9 @@
   els.qty.value = String(state.qty);
   els.notes.value = state.notes || "";
   render();
+  if (routeError){
+    toast(routeError);
+  }
 })();
 </script>
 </body>
