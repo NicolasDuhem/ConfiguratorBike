@@ -215,6 +215,85 @@
       display:none;
       background:#fff;
     }
+    .composite-card{
+      padding: 12px;
+      background: #f7f8fb;
+      border:1px solid var(--border);
+      border-radius: 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .composite-preview{
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 16 / 9;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .composite-preview img{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      image-rendering: auto;
+    }
+    .composite-empty{
+      font-size: 12px;
+      color: var(--muted);
+      text-align:center;
+      padding: 12px;
+    }
+    .composite-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .layers-list{
+      display:grid;
+      gap:10px;
+    }
+    .layer-item{
+      display:grid;
+      grid-template-columns: 54px 1fr;
+      gap:10px;
+      align-items:center;
+      padding: 10px;
+      border:1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+    .layer-thumb{
+      width: 54px;
+      height: 40px;
+      border-radius: 10px;
+      border:1px solid var(--border);
+      background:#fff;
+      object-fit: contain;
+    }
+    .layer-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .layer-meta{
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .layer-title{
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
 
     .admin-overlay{
       position: fixed;
@@ -367,6 +446,23 @@
           </div>
           <ul id="selectionList"></ul>
           <div class="muted" id="constraintMsg" style="margin-top:10px; font-size:12px;"></div>
+        </div>
+
+        <div class="composite-card">
+          <div class="line">
+            <strong>Composite (layered PNG/WebP)</strong>
+          </div>
+          <div class="composite-preview" id="compositePreview">
+            <div class="composite-empty" id="compositeEmpty">No images for current selections.</div>
+          </div>
+          <div class="composite-actions">
+            <button id="btnDownloadCompositeWhite" class="primary">Download composite (white bg)</button>
+            <button id="btnDownloadCompositeTransparent">Download composite (transparent)</button>
+          </div>
+          <div class="line" style="margin-top:4px;">
+            <strong>Image layers</strong>
+          </div>
+          <div class="layers-list" id="imageLayersList"></div>
         </div>
 
         <div class="muted" style="font-size:12px; line-height:1.35">
@@ -705,6 +801,11 @@
 
     selectionList: $("selectionList"),
     constraintMsg: $("constraintMsg"),
+    compositePreview: $("compositePreview"),
+    compositeEmpty: $("compositeEmpty"),
+    imageLayersList: $("imageLayersList"),
+    btnDownloadCompositeWhite: $("btnDownloadCompositeWhite"),
+    btnDownloadCompositeTransparent: $("btnDownloadCompositeTransparent"),
 
     validDot: $("validDot"),
     validText: $("validText"),
@@ -890,6 +991,175 @@
     }else{
       imgEl.removeAttribute("src");
       imgEl.style.display = "none";
+    }
+  }
+
+  function getCompositeGroupOrder(model){
+    if (!model || !Array.isArray(model.groupsOrder)) return [];
+    const order = model.groupsOrder.slice();
+    if (order.includes("base")){
+      return ["base", ...order.filter((key) => key !== "base")];
+    }
+    return order;
+  }
+
+  function getSelectedImageLayers(){
+    const model = getModel(state.modelId);
+    if (!model) return [];
+    const order = getCompositeGroupOrder(model);
+    const layers = [];
+    order.forEach((groupKey) => {
+      const group = model.groups[groupKey];
+      if (!group) return;
+      const selectedId = state.selections[groupKey] || "";
+      if (!selectedId) return;
+      const option = findOption(model, groupKey, selectedId);
+      if (!option || !option.imageUrl) return;
+      layers.push({
+        groupKey,
+        groupLabel: group.label || titleCaseFromKey(groupKey),
+        optionId: option.id,
+        optionLabel: option.label,
+        imageUrl: option.imageUrl
+      });
+    });
+    return layers;
+  }
+
+  function renderComposite(layers){
+    if (!els.compositePreview) return;
+    els.compositePreview.innerHTML = "";
+    const empty = !layers.length;
+    if (empty){
+      const placeholder = document.createElement("div");
+      placeholder.className = "composite-empty";
+      placeholder.textContent = "No images for current selections.";
+      els.compositePreview.appendChild(placeholder);
+      return;
+    }
+    layers.forEach((layer) => {
+      const img = document.createElement("img");
+      img.alt = `${layer.groupLabel}: ${layer.optionLabel}`;
+      img.src = layer.imageUrl;
+      els.compositePreview.appendChild(img);
+    });
+  }
+
+  function renderImageLayersList(layers){
+    if (!els.imageLayersList) return;
+    els.imageLayersList.innerHTML = "";
+    if (!layers.length){
+      const empty = document.createElement("div");
+      empty.className = "muted";
+      empty.style.fontSize = "12px";
+      empty.textContent = "No images for current selections.";
+      els.imageLayersList.appendChild(empty);
+      return;
+    }
+    layers.forEach((layer) => {
+      const item = document.createElement("div");
+      item.className = "layer-item";
+      item.innerHTML = `
+        <img class="layer-thumb" src="${escapeHtml(layer.imageUrl)}" alt="${escapeHtml(layer.groupLabel)} thumbnail">
+        <div>
+          <div class="layer-title">${escapeHtml(layer.groupLabel)} — ${escapeHtml(layer.optionLabel)}</div>
+          <div class="layer-meta">${escapeHtml(layer.groupKey)} / ${escapeHtml(layer.optionId)}</div>
+          <div class="layer-actions">
+            <button data-action="layer-open" data-url="${escapeHtml(layer.imageUrl)}">Open</button>
+            <button data-action="layer-download" data-url="${escapeHtml(layer.imageUrl)}" data-label="${escapeHtml(layer.optionLabel)}">Download</button>
+          </div>
+        </div>
+      `;
+      els.imageLayersList.appendChild(item);
+    });
+  }
+
+  function drawContain(ctx, img, cw, ch){
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    if (!iw || !ih) return;
+    const scale = Math.min(cw / iw, ch / ih);
+    const drawW = iw * scale;
+    const drawH = ih * scale;
+    const drawX = (cw - drawW) / 2;
+    const drawY = (ch - drawH) / 2;
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  }
+
+  function loadLayerImage(url){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      img.src = url;
+    });
+  }
+
+  async function exportCompositePNG(layers, opts){
+    if (!layers.length){
+      toast("No layers to export.");
+      return;
+    }
+    const container = els.compositePreview;
+    const width = container?.clientWidth || 700;
+    const height = container?.clientHeight || 400;
+    const scale = window.devicePixelRatio || 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.floor(width * scale));
+    canvas.height = Math.max(1, Math.floor(height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx){
+      toast("Canvas not supported in this browser.");
+      return;
+    }
+    ctx.scale(scale, scale);
+    if (opts && opts.background === "white"){
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+    }
+    try{
+      for (const layer of layers){
+        const img = await loadLayerImage(layer.imageUrl);
+        drawContain(ctx, img, width, height);
+      }
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob){
+        toast("Unable to export PNG from canvas.");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bike-composite.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }catch(err){
+      console.error(err);
+      toast("Cannot export composite because some images block cross-origin canvas. Use Open/Download per layer instead.");
+    }
+  }
+
+  async function downloadLayerImage(url, label){
+    try{
+      const res = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (!res.ok){
+        throw new Error("Failed download");
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${(label || "layer").replace(/\s+/g, "-").toLowerCase()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    }catch(err){
+      window.open(url, "_blank", "noopener");
+      toast("Download blocked by CORS; opened image instead.");
     }
   }
 
@@ -1431,6 +1701,10 @@
     addLi("Qty", String(c.qty));
     if (state.notes && state.notes.trim()) addLi("Notes", state.notes.trim());
 
+    const layers = getSelectedImageLayers();
+    renderComposite(layers);
+    renderImageLayersList(layers);
+
     saveState();
   }
 
@@ -1684,6 +1958,30 @@
     setTimeout(() => {
       window.location.href = HOME_URL;
     }, 700);
+  });
+
+  els.btnDownloadCompositeWhite.addEventListener("click", ()=>{
+    const layers = getSelectedImageLayers();
+    exportCompositePNG(layers, { background: "white" });
+  });
+
+  els.btnDownloadCompositeTransparent.addEventListener("click", ()=>{
+    const layers = getSelectedImageLayers();
+    exportCompositePNG(layers, { background: "transparent" });
+  });
+
+  els.imageLayersList.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const url = btn.dataset.url;
+    if (!url) return;
+    if (action === "layer-open"){
+      window.open(url, "_blank", "noopener");
+    }
+    if (action === "layer-download"){
+      downloadLayerImage(url, btn.dataset.label || "");
+    }
   });
 
   els.btnAdmin.addEventListener("click", ()=>{
