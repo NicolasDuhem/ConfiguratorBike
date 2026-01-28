@@ -68,6 +68,10 @@
       border-color: rgba(31,157,103,.35);
       background: rgba(31,157,103,.10);
     }
+    button.danger{
+      border-color: rgba(214,69,80,.35);
+      background: rgba(214,69,80,.08);
+    }
 
     .panel{
       background: #fff;
@@ -133,7 +137,7 @@
       color:var(--muted);
       font-weight:700;
     }
-    select, input[type="number"], textarea{
+    select, input[type="number"], textarea, input[type="text"], input[type="password"]{
       width:100%;
       border-radius: 12px;
       border:1px solid var(--border);
@@ -200,6 +204,90 @@
       z-index: 999;
       white-space: pre-wrap;
     }
+
+    .option-preview{
+      margin-top: 8px;
+      max-height: 120px;
+      width: 100%;
+      object-fit: contain;
+      border: 1px solid rgba(16,18,24,.12);
+      border-radius: 12px;
+      display:none;
+      background:#fff;
+    }
+
+    .admin-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 1000;
+    }
+    .admin-modal{
+      background:#fff;
+      border-radius: 16px;
+      padding: 18px;
+      width: min(420px, 90vw);
+      box-shadow: var(--shadow);
+      border:1px solid var(--border);
+    }
+    .admin-modal h3{margin:0 0 10px; font-size:16px}
+    .admin-panel{
+      position: fixed;
+      inset: auto 12px 12px 12px;
+      background:#fff;
+      border-radius: 16px;
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      max-height: 80vh;
+      display:none;
+      flex-direction:column;
+      z-index: 998;
+    }
+    .admin-panel .admin-header{
+      padding: 12px 14px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      background: #f9faff;
+      flex-wrap:wrap;
+    }
+    .admin-panel .admin-body{
+      padding: 14px;
+      overflow:auto;
+      display:grid;
+      gap: 12px;
+    }
+    .admin-actions{display:flex; gap:8px; flex-wrap:wrap}
+    .admin-tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .admin-tabs button{padding:6px 10px; font-size:12px}
+    .admin-tabs button.active{border-color: rgba(31,75,255,.6); background: rgba(31,75,255,.12)}
+    .admin-section{
+      border:1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fafbff;
+    }
+    .admin-table{
+      width:100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .admin-table th,
+    .admin-table td{
+      border-bottom:1px solid var(--border);
+      padding: 6px;
+      text-align:left;
+      vertical-align:top;
+    }
+    .admin-table th{color: var(--muted); font-weight:700}
+    .admin-row-actions{display:flex; gap:6px; flex-wrap:wrap}
+    .admin-row-actions button{padding:6px 8px; font-size:11px}
+    .status-line{font-size:12px; color: var(--muted)}
   </style>
 </head>
 
@@ -214,6 +302,7 @@
       </div>
 
       <div class="top-actions">
+        <button id="btnAdmin" class="primary">ADMIN</button>
         <button id="btnReset">Reset</button>
         <button id="btnCopyJson">Copy JSON</button>
         <button id="btnOrder" class="success">Order (Add to Cart)</button>
@@ -259,6 +348,7 @@
               <label>Frame color
                 <select id="colorSelect"></select>
               </label>
+              <img id="colorPreview" class="option-preview" alt="Selected color preview" />
             </div>
           </div>
 
@@ -275,6 +365,7 @@
               <label>Gearing
                 <select id="gearingSelect"></select>
               </label>
+              <img id="gearingPreview" class="option-preview" alt="Selected gearing preview" />
             </div>
           </div>
 
@@ -291,6 +382,7 @@
               <label>Rear rack
                 <select id="rackSelect"></select>
               </label>
+              <img id="rackPreview" class="option-preview" alt="Selected rack preview" />
             </div>
           </div>
 
@@ -307,6 +399,7 @@
               <label>Lights
                 <select id="lightsSelect"></select>
               </label>
+              <img id="lightsPreview" class="option-preview" alt="Selected lights preview" />
             </div>
           </div>
 
@@ -373,6 +466,42 @@
   <div class="toast" id="toast"></div>
   <iframe name="hiddenCartFrame" style="display:none;"></iframe>
 
+  <div class="admin-overlay" id="adminPrompt">
+    <div class="admin-modal">
+      <h3>Admin access</h3>
+      <label>Password
+        <input id="adminPassword" type="password" placeholder="Enter password" />
+      </label>
+      <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+        <button id="adminCancel">Cancel</button>
+        <button id="adminSubmit" class="primary">Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-header">
+      <div>
+        <strong>Admin Panel</strong>
+        <div class="status-line" id="adminStatusLine"></div>
+      </div>
+      <div class="admin-actions">
+        <button id="btnRefreshSheet">Refresh from Sheet</button>
+        <button id="btnResetSheet">Reset to Sheet</button>
+        <button id="btnResetDefaults">Reset to Defaults</button>
+        <button id="btnSaveSheet" class="success">Save to Sheet</button>
+        <button id="btnExitAdmin" class="danger">Logout / Exit Admin</button>
+      </div>
+    </div>
+    <div class="admin-body">
+      <label>Model to edit
+        <select id="adminModelSelect"></select>
+      </label>
+      <div class="admin-tabs" id="adminTabs"></div>
+      <div id="adminSections"></div>
+    </div>
+  </div>
+
 <script>
 (function(){
   // =========================
@@ -384,100 +513,148 @@
   const HOME_URL = "https://store-tiznycmyx9-1826150.catalyst-sandbox-vercel.store/";
 
   // =========================
-  // CONFIG DATA (UI only)
+  // CONFIG API SETTINGS
   // =========================
-  const DATA = {
-    currency: "EUR",
-    models: [
-      {
-        id:"c-line",
-        name:"C Line",
-        basePrice: 0,
-        allowedColors:["black","red"],
-        allowedGearing:["1","4","12"],
-        allowedRacks:["yes","no"],
-        allowedLights:["battery","dynamo"]
+  const CONFIG_API_BASE = "https://script.google.com/macros/s/AKfycbxXozAWB_L2XQhUEVOWd36XPdtqxhHPQbVHbcTzZvcznn6MS9igoZhigt6KBkTvG-0-Qg/exec";
+  const CONFIG_API_KEY = "IwillUpdatethepaswordlater";
+
+  // =========================
+  // DEFAULT CONFIG (fallback)
+  // =========================
+  const DEFAULT_CONFIG = {
+    version: 1,
+    models: {
+      "c-line": {
+        label: "C Line",
+        options: {
+          colors: [
+            { id: "black", label: "Black", price: 0, imageUrl: "", enabled: true },
+            { id: "red", label: "Red", price: 0, imageUrl: "", enabled: true }
+          ],
+          gearing: [
+            { id: "1", label: "1-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+          ],
+          rack: [
+            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true },
+            { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+          ],
+          lights: [
+            { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
+            { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
+          ]
+        }
       },
-      {
-        id:"c-line-elec",
-        name:"C Line Electric",
-        basePrice: 0,
-        allowedColors:["blue-elec","green"],
-        allowedGearing:["4","12"],
-        allowedRacks:["yes"],
-        allowedLights:["battery-elec"]
+      "c-line-elec": {
+        label: "C Line Electric",
+        options: {
+          colors: [
+            { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
+            { id: "green", label: "Green", price: 0, imageUrl: "", enabled: true }
+          ],
+          gearing: [
+            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+          ],
+          rack: [
+            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+          ],
+          lights: [
+            { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+          ]
+        }
       },
-      {
-        id:"p-line",
-        name:"P Line",
-        basePrice: 0,
-        allowedColors:["yellow","raw-lacquer"],
-        allowedGearing:["2","4","8"],
-        allowedRacks:["no"],
-        allowedLights:["battery","dynamo"]
+      "p-line": {
+        label: "P Line",
+        options: {
+          colors: [
+            { id: "yellow", label: "Yellow", price: 0, imageUrl: "", enabled: true },
+            { id: "raw-lacquer", label: "Raw Lacquer", price: 0, imageUrl: "", enabled: true }
+          ],
+          gearing: [
+            { id: "2", label: "2-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "8", label: "8-speed", price: 0, imageUrl: "", enabled: true }
+          ],
+          rack: [
+            { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+          ],
+          lights: [
+            { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
+            { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
+          ]
+        }
       },
-      {
-        id:"p-line-elec",
-        name:"P Line Electric",
-        basePrice: 0,
-        allowedColors:["blue-elec","line-green"],
-        allowedGearing:["4","12"],
-        allowedRacks:["yes"],
-        allowedLights:["battery-elec"]
+      "p-line-elec": {
+        label: "P Line Electric",
+        options: {
+          colors: [
+            { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
+            { id: "line-green", label: "Line Green", price: 0, imageUrl: "", enabled: true }
+          ],
+          gearing: [
+            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+          ],
+          rack: [
+            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+          ],
+          lights: [
+            { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+          ]
+        }
       },
-      {
-        id:"g-line",
-        name:"G Line",
-        basePrice: 0,
-        allowedColors:["orange","sand","champagne"],
-        allowedGearing:["4","12"],
-        allowedRacks:["no"],
-        allowedLights:["battery"]
+      "g-line": {
+        label: "G Line",
+        options: {
+          colors: [
+            { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
+            { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
+            { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
+          ],
+          gearing: [
+            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+          ],
+          rack: [
+            { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+          ],
+          lights: [
+            { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true }
+          ]
+        }
       },
-      {
-        id:"g-line-elec",
-        name:"G Line Electric",
-        basePrice: 0,
-        allowedColors:["orange","sand","champagne"],
-        allowedGearing:["4","12"],
-        allowedRacks:["yes"],
-        allowedLights:["battery-elec"]
+      "g-line-elec": {
+        label: "G Line Electric",
+        options: {
+          colors: [
+            { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
+            { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
+            { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
+          ],
+          gearing: [
+            { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
+            { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+          ],
+          rack: [
+            { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+          ],
+          lights: [
+            { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+          ]
+        }
       }
-    ],
-    colors: [
-      { id:"black", name:"Black", price: 0 },
-      { id:"red", name:"Red", price: 0 },
-      { id:"blue-elec", name:"Blue Electric", price: 0 },
-      { id:"green", name:"Green", price: 0 },
-      { id:"yellow", name:"Yellow", price: 0 },
-      { id:"raw-lacquer", name:"Raw Lacquer", price: 0 },
-      { id:"line-green", name:"Line Green", price: 0 },
-      { id:"orange", name:"Orange", price: 0 },
-      { id:"sand", name:"Sand", price: 0 },
-      { id:"champagne", name:"Champagne", price: 0 }
-    ],
-    gearing: [
-      { id:"1", name:"1-speed", price: 0 },
-      { id:"2", name:"2-speed", price: 0 },
-      { id:"4", name:"4-speed", price: 0 },
-      { id:"8", name:"8-speed", price: 0 },
-      { id:"12", name:"12-speed", price: 0 }
-    ],
-    racks: [
-      { id:"yes", name:"Rack included", price: 0 },
-      { id:"no", name:"No rack", price: 0 }
-    ],
-    lights: [
-      { id:"battery", name:"Battery lights", price: 0 },
-      { id:"dynamo", name:"Dynamo lighting", price: 0 },
-      { id:"battery-elec", name:"Battery lights (Electric)", price: 0 }
-    ]
+    }
   };
+
+  let CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 
   // =========================
   // STATE
   // =========================
-  const STORAGE_KEY = "bike_configurator_b2b_v2";
+  const STORAGE_KEY = "bike_configurator_b2b_v3";
+  const ADMIN_STORAGE_KEY = "bike_configurator_admin_mode";
   const state = {
     modelId: "",
     colorId: "",
@@ -487,6 +664,16 @@
     qty: 1,
     notes: ""
   };
+
+  const adminState = {
+    enabled: false,
+    modelId: "",
+    activeGroup: "colors",
+    lastSheetUpdatedAt: "",
+    lastSaveAttempt: ""
+  };
+
+  const ADMIN_PASSWORD = "Brompton";
 
   // =========================
   // DOM
@@ -534,8 +721,30 @@
     btnReset: $("btnReset"),
     btnCopyJson: $("btnCopyJson"),
     btnOrder: $("btnOrder"),
+    btnAdmin: $("btnAdmin"),
 
     toast: $("toast"),
+
+    colorPreview: $("colorPreview"),
+    gearingPreview: $("gearingPreview"),
+    rackPreview: $("rackPreview"),
+    lightsPreview: $("lightsPreview"),
+
+    adminPrompt: $("adminPrompt"),
+    adminPassword: $("adminPassword"),
+    adminCancel: $("adminCancel"),
+    adminSubmit: $("adminSubmit"),
+
+    adminPanel: $("adminPanel"),
+    adminModelSelect: $("adminModelSelect"),
+    adminTabs: $("adminTabs"),
+    adminSections: $("adminSections"),
+    adminStatusLine: $("adminStatusLine"),
+    btnRefreshSheet: $("btnRefreshSheet"),
+    btnResetSheet: $("btnResetSheet"),
+    btnResetDefaults: $("btnResetDefaults"),
+    btnSaveSheet: $("btnSaveSheet"),
+    btnExitAdmin: $("btnExitAdmin")
   };
 
   // =========================
@@ -549,6 +758,13 @@
     "/p-line-configurator": "p-line",
     "/p-line-elec-configurator": "p-line-elec"
   };
+
+  const GROUPS = [
+    { key: "colors", label: "Colors" },
+    { key: "gearing", label: "Gearing" },
+    { key: "rack", label: "Rack" },
+    { key: "lights", label: "Lights" }
+  ];
 
   function getForcedModelFromPath(){
     const rawPath = (window.location.pathname || "").toLowerCase();
@@ -569,15 +785,13 @@
   }
 
   function money(n){
-    const cur = DATA.currency || "EUR";
+    const cur = "EUR";
     try{
       return new Intl.NumberFormat(undefined, { style:"currency", currency:cur, maximumFractionDigits:0 }).format(n);
     }catch(e){
       return cur + " " + Math.round(n);
     }
   }
-
-  function findById(list, id){ return list.find(x => x.id === id) || null; }
 
   function normalizeQty(v){
     const n = Number(v);
@@ -595,7 +809,7 @@
     list.forEach(item=>{
       const opt = document.createElement("option");
       opt.value = item.id;
-      opt.textContent = item.name + (item.price ? ` (+${money(item.price)})` : "");
+      opt.textContent = item.label + (item.price ? ` (+${money(item.price)})` : "");
       selectEl.appendChild(opt);
     });
   }
@@ -604,23 +818,8 @@
     selectEl.innerHTML = "";
     const opt = document.createElement("option");
     opt.value = item.id;
-    opt.textContent = item.name + (item.price ? ` (+${money(item.price)})` : "");
+    opt.textContent = item.label + (item.price ? ` (+${money(item.price)})` : "");
     selectEl.appendChild(opt);
-  }
-
-  function applyAllowedOptions(selectEl, list, allowedIds, placeholder, currentValue){
-    const filtered = list.filter(x => allowedIds.includes(x.id));
-    setSelectOptions(selectEl, filtered, placeholder);
-    const isFixed = filtered.length === 1;
-    let nextValue = currentValue || "";
-    if (isFixed){
-      nextValue = filtered[0].id;
-    }else if (nextValue && !allowedIds.includes(nextValue)){
-      nextValue = "";
-    }
-    selectEl.disabled = isFixed;
-    selectEl.dataset.fixed = isFixed ? "true" : "false";
-    return { value: nextValue, fixed: isFixed, option: filtered[0] || null };
   }
 
   function updatePill(pillEl, ok){
@@ -633,6 +832,45 @@
       return `${label} (fixed for this model)`;
     }
     return label;
+  }
+
+  function getModel(modelId){
+    return (CONFIG.models && CONFIG.models[modelId]) || null;
+  }
+
+  function getEnabledOptions(model, groupKey){
+    if (!model || !model.options || !model.options[groupKey]) return [];
+    return model.options[groupKey].filter(opt => opt.enabled);
+  }
+
+  function applyOptions(selectEl, options, placeholder, currentValue){
+    if (!options.length){
+      setSelectOptions(selectEl, [], "Unavailable");
+      selectEl.disabled = true;
+      selectEl.dataset.fixed = "true";
+      return { value: "", fixed: true, option: null };
+    }
+    setSelectOptions(selectEl, options, placeholder);
+    const isFixed = options.length === 1;
+    let nextValue = currentValue || "";
+    if (isFixed){
+      nextValue = options[0].id;
+    } else if (nextValue && !options.some(opt => opt.id === nextValue)){
+      nextValue = "";
+    }
+    selectEl.disabled = isFixed;
+    selectEl.dataset.fixed = isFixed ? "true" : "false";
+    return { value: nextValue, fixed: isFixed, option: options[0] || null };
+  }
+
+  function updatePreview(imgEl, option){
+    if (option && option.imageUrl){
+      imgEl.src = option.imageUrl;
+      imgEl.style.display = "block";
+    }else{
+      imgEl.removeAttribute("src");
+      imgEl.style.display = "none";
+    }
   }
 
   function validateAndApplyConstraints(){
@@ -655,25 +893,24 @@
       return { ok:false, msg:routeError, model:null, routeError:true };
     }
 
-    const model = findById(DATA.models, forcedModelId);
+    const model = getModel(forcedModelId);
     if (!model){
       return { ok:false, msg:"Unsupported model route. Please use a valid configurator URL.", model:null, routeError:true };
     }
 
-    state.modelId = model.id;
-
-    setSingleOption(els.model, { id:model.id, name:model.name, price:model.basePrice });
-    els.model.value = model.id;
+    state.modelId = forcedModelId;
+    setSingleOption(els.model, { id: forcedModelId, label: model.label, price: 0 });
+    els.model.value = forcedModelId;
     els.model.disabled = true;
     els.model.dataset.fixed = "true";
 
-    const colorResult = applyAllowedOptions(els.color, DATA.colors, model.allowedColors, "Select color…", state.colorId);
+    const colorResult = applyOptions(els.color, getEnabledOptions(model, "colors"), "Select color…", state.colorId);
     state.colorId = colorResult.value;
-    const gearingResult = applyAllowedOptions(els.gearing, DATA.gearing, model.allowedGearing, "Select gearing…", state.gearingId);
+    const gearingResult = applyOptions(els.gearing, getEnabledOptions(model, "gearing"), "Select gearing…", state.gearingId);
     state.gearingId = gearingResult.value;
-    const rackResult = applyAllowedOptions(els.rack, DATA.racks, model.allowedRacks, "Select rack…", state.rackId);
+    const rackResult = applyOptions(els.rack, getEnabledOptions(model, "rack"), "Select rack…", state.rackId);
     state.rackId = rackResult.value;
-    const lightsResult = applyAllowedOptions(els.lights, DATA.lights, model.allowedLights, "Select lights…", state.lightsId);
+    const lightsResult = applyOptions(els.lights, getEnabledOptions(model, "lights"), "Select lights…", state.lightsId);
     state.lightsId = lightsResult.value;
 
     els.color.value = state.colorId;
@@ -695,26 +932,22 @@
   }
 
   function buildAttribute116Value(){
+    const model = getModel(state.modelId);
     const selections = [
-      { label: "Model", el: els.model },
-      { label: "Colour", el: els.color },
-      { label: "Speed", el: els.gearing },
-      { label: "Rack", el: els.rack },
-      { label: "Light", el: els.lights },
+      { label: "Model", value: model ? model.label : "" },
+      { label: "Colour", value: findOptionLabel(model, "colors", state.colorId) },
+      { label: "Speed", value: findOptionLabel(model, "gearing", state.gearingId) },
+      { label: "Rack", value: findOptionLabel(model, "rack", state.rackId) },
+      { label: "Light", value: findOptionLabel(model, "lights", state.lightsId) }
     ];
+
     const missing = [];
-    const parts = selections.map(({ label, el }) => {
-      if (!el.value){
+    const parts = selections.map(({ label, value }) => {
+      if (!value){
         missing.push(label);
         return "";
       }
-      const option = el.options[el.selectedIndex];
-      const text = option ? option.textContent.trim() : "";
-      if (!text){
-        missing.push(label);
-        return "";
-      }
-      return `${label}: ${text}`;
+      return `${label}: ${value}`;
     });
 
     if (missing.length){
@@ -727,14 +960,24 @@
     return { missing, value: parts.join("\n") };
   }
 
-  function calc(){
-    const model = findById(DATA.models, state.modelId);
-    const color = findById(DATA.colors, state.colorId);
-    const gearing = findById(DATA.gearing, state.gearingId);
-    const rack = findById(DATA.racks, state.rackId);
-    const lights = findById(DATA.lights, state.lightsId);
+  function findOption(model, groupKey, id){
+    if (!model || !model.options || !model.options[groupKey]) return null;
+    return model.options[groupKey].find(opt => opt.id === id) || null;
+  }
 
-    const base = model ? model.basePrice : 0;
+  function findOptionLabel(model, groupKey, id){
+    const option = findOption(model, groupKey, id);
+    return option ? option.label : "";
+  }
+
+  function calc(){
+    const model = getModel(state.modelId);
+    const color = findOption(model, "colors", state.colorId);
+    const gearing = findOption(model, "gearing", state.gearingId);
+    const rack = findOption(model, "rack", state.rackId);
+    const lights = findOption(model, "lights", state.lightsId);
+
+    const base = 0;
     const options =
       (color ? color.price : 0) +
       (gearing ? gearing.price : 0) +
@@ -783,17 +1026,156 @@
     }catch(e){}
   }
 
-  function exportConfig(){
-    const payload = {
-      version: 1,
-      timestamp: new Date().toISOString(),
-      productIdForCart: PRODUCT_ID,
-      config: { ...state, qty: normalizeQty(state.qty) }
-    };
-    return JSON.stringify(payload, null, 2);
+  function loadAdminState(){
+    try{
+      const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+      adminState.enabled = raw === "true";
+    }catch(e){
+      adminState.enabled = false;
+    }
   }
 
-  function render(){
+  function saveAdminState(){
+    try{
+      localStorage.setItem(ADMIN_STORAGE_KEY, adminState.enabled ? "true" : "false");
+    }catch(e){}
+  }
+
+  function exportConfig(){
+    return JSON.stringify(CONFIG, null, 2);
+  }
+
+  function updateAdminStatus(){
+    const updatedAt = adminState.lastSheetUpdatedAt ? `Sheet updated: ${adminState.lastSheetUpdatedAt}` : "Sheet updated: —";
+    const lastSave = adminState.lastSaveAttempt ? `Last save attempt: ${adminState.lastSaveAttempt}` : "Last save attempt: —";
+    els.adminStatusLine.textContent = `${updatedAt} | ${lastSave}`;
+  }
+
+  function reconcileSelections(){
+    let changed = false;
+    const model = getModel(forcedModelId);
+    if (!model){
+      if (state.modelId || state.colorId || state.gearingId || state.rackId || state.lightsId){
+        changed = true;
+      }
+      state.modelId = "";
+      state.colorId = "";
+      state.gearingId = "";
+      state.rackId = "";
+      state.lightsId = "";
+    }else{
+      state.modelId = forcedModelId;
+      const groups = [
+        { key: "colors", field: "colorId" },
+        { key: "gearing", field: "gearingId" },
+        { key: "rack", field: "rackId" },
+        { key: "lights", field: "lightsId" }
+      ];
+      groups.forEach(({ key, field }) => {
+        const enabledOptions = getEnabledOptions(model, key);
+        const isAvailable = enabledOptions.some(opt => opt.id === state[field]);
+        if (!isAvailable){
+          if (state[field]) changed = true;
+          state[field] = "";
+        }
+      });
+    }
+    if (changed){
+      saveState();
+    }
+  }
+
+  async function loadConfigFromSheet(useFallbackOnError){
+    try{
+      const res = await fetch(`${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`);
+      const payload = await res.json();
+      if (!payload || !payload.ok){
+        throw new Error("API returned ok:false");
+      }
+      if (!payload.data){
+        throw new Error("No config data");
+      }
+      CONFIG = payload.data;
+      adminState.lastSheetUpdatedAt = payload.meta && payload.meta.updated_at ? payload.meta.updated_at : "";
+      updateAdminStatus();
+      reconcileSelections();
+      renderBuyer();
+      renderAdmin();
+      toast("Config loaded from sheet.");
+      return true;
+    }catch(err){
+      if (useFallbackOnError){
+        CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        reconcileSelections();
+        renderBuyer();
+        renderAdmin();
+        toast("Using local defaults (config API unavailable)");
+      }else{
+        toast("Failed to load sheet config.");
+      }
+      return false;
+    }
+  }
+
+  async function saveConfigToSheet(){
+    const errors = validateConfig(CONFIG);
+    if (errors.length){
+      toast("Fix validation errors before saving:\n" + errors.join("\n"));
+      return false;
+    }
+    adminState.lastSaveAttempt = new Date().toLocaleString();
+    updateAdminStatus();
+    try{
+      const res = await fetch(`${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(CONFIG)
+      });
+      const payload = await res.json();
+      if (!payload || !payload.ok){
+        throw new Error("Save failed");
+      }
+      toast("Saved to sheet.");
+      renderBuyer();
+      return true;
+    }catch(err){
+      toast("Failed to save to sheet.");
+      return false;
+    }
+  }
+
+  function validateConfig(config){
+    const errors = [];
+    if (!config || !config.models){
+      errors.push("Config models missing.");
+      return errors;
+    }
+    Object.entries(config.models).forEach(([modelId, model]) => {
+      GROUPS.forEach(group => {
+        const options = model.options && model.options[group.key] ? model.options[group.key] : [];
+        const seen = new Set();
+        options.forEach((opt, index) => {
+          if (!opt.id){
+            errors.push(`${modelId} ${group.label} option #${index + 1}: id is required.`);
+          }else if (seen.has(opt.id)){
+            errors.push(`${modelId} ${group.label} option id "${opt.id}" is duplicated.`);
+          }else{
+            seen.add(opt.id);
+          }
+          if (opt.imageUrl && !/^https?:\/\//i.test(opt.imageUrl)){
+            errors.push(`${modelId} ${group.label} option "${opt.id}": imageUrl must start with http:// or https://`);
+          }
+          const price = Number(opt.price);
+          if (!Number.isFinite(price) || price < 0){
+            errors.push(`${modelId} ${group.label} option "${opt.id}": price must be a number >= 0`);
+          }
+        });
+      });
+    });
+    return errors;
+  }
+
+  function renderBuyer(){
     const v = validateAndApplyConstraints();
     const c = calc();
 
@@ -814,15 +1196,15 @@
     }
     els.btnOrder.disabled = !v.ok;
 
-    els.metaModel.textContent = metaWithFixed(c.model ? c.model.name : "", "Choose a base model", els.model);
-    els.priceModel.textContent = c.model ? money(c.model.basePrice) : "—";
-    els.metaColor.textContent = metaWithFixed(c.color ? c.color.name : "", "Pick a frame color", els.color);
+    els.metaModel.textContent = metaWithFixed(c.model ? c.model.label : "", "Choose a base model", els.model);
+    els.priceModel.textContent = c.model ? money(0) : "—";
+    els.metaColor.textContent = metaWithFixed(c.color ? c.color.label : "", "Pick a frame color", els.color);
     els.priceColor.textContent = c.color ? (c.color.price ? "+"+money(c.color.price) : money(0)) : "—";
-    els.metaGearing.textContent = metaWithFixed(c.gearing ? c.gearing.name : "", "Select gearing", els.gearing);
+    els.metaGearing.textContent = metaWithFixed(c.gearing ? c.gearing.label : "", "Select gearing", els.gearing);
     els.priceGearing.textContent = c.gearing ? (c.gearing.price ? "+"+money(c.gearing.price) : money(0)) : "—";
-    els.metaRack.textContent = metaWithFixed(c.rack ? c.rack.name : "", "Choose a rack", els.rack);
+    els.metaRack.textContent = metaWithFixed(c.rack ? c.rack.label : "", "Choose a rack", els.rack);
     els.priceRack.textContent = c.rack ? (c.rack.price ? "+"+money(c.rack.price) : money(0)) : "—";
-    els.metaLights.textContent = metaWithFixed(c.lights ? c.lights.name : "", "Add lights", els.lights);
+    els.metaLights.textContent = metaWithFixed(c.lights ? c.lights.label : "", "Add lights", els.lights);
     els.priceLights.textContent = c.lights ? (c.lights.price ? "+"+money(c.lights.price) : money(0)) : "—";
 
     updatePill(els.pillModel, !!state.modelId);
@@ -837,15 +1219,110 @@
       li.innerHTML = `<span class="muted">${label}:</span> ${val}`;
       els.selectionList.appendChild(li);
     };
-    if (c.model) addLi("Model", c.model.name);
-    if (c.color) addLi("Color", c.color.name);
-    if (c.gearing) addLi("Gearing", c.gearing.name);
-    if (c.rack) addLi("Rack", c.rack.name);
-    if (c.lights) addLi("Lights", c.lights.name);
+    if (c.model) addLi("Model", c.model.label);
+    if (c.color) addLi("Color", c.color.label);
+    if (c.gearing) addLi("Gearing", c.gearing.label);
+    if (c.rack) addLi("Rack", c.rack.label);
+    if (c.lights) addLi("Lights", c.lights.label);
     addLi("Qty", String(c.qty));
     if (state.notes && state.notes.trim()) addLi("Notes", state.notes.trim());
 
+    updatePreview(els.colorPreview, c.color);
+    updatePreview(els.gearingPreview, c.gearing);
+    updatePreview(els.rackPreview, c.rack);
+    updatePreview(els.lightsPreview, c.lights);
+
     saveState();
+  }
+
+  function renderAdmin(){
+    if (!adminState.enabled){
+      els.adminPanel.style.display = "none";
+      return;
+    }
+    const modelIds = Object.keys(CONFIG.models || {});
+    if (!adminState.modelId || !CONFIG.models[adminState.modelId]){
+      adminState.modelId = modelIds[0] || "";
+    }
+    els.adminPanel.style.display = "flex";
+
+    els.adminModelSelect.innerHTML = "";
+    modelIds.forEach(id => {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = CONFIG.models[id].label || id;
+      els.adminModelSelect.appendChild(opt);
+    });
+    els.adminModelSelect.value = adminState.modelId;
+
+    els.adminTabs.innerHTML = "";
+    GROUPS.forEach(group => {
+      const btn = document.createElement("button");
+      btn.textContent = group.label;
+      btn.dataset.group = group.key;
+      if (adminState.activeGroup === group.key){
+        btn.classList.add("active");
+      }
+      els.adminTabs.appendChild(btn);
+    });
+
+    const model = CONFIG.models[adminState.modelId];
+    els.adminSections.innerHTML = "";
+
+    GROUPS.forEach(group => {
+      const options = model.options[group.key] || [];
+      const section = document.createElement("div");
+      section.className = "admin-section";
+      section.style.display = adminState.activeGroup === group.key ? "block" : "none";
+      section.dataset.group = group.key;
+      section.innerHTML = `
+        <div class="line" style="margin-bottom:8px;">
+          <strong>${group.label}</strong>
+          <button class="primary" data-action="add-option" data-group="${group.key}">Add option</button>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:120px;">ID</th>
+              <th>Label</th>
+              <th style="width:90px;">Price</th>
+              <th>Image URL</th>
+              <th style="width:80px;">Enabled</th>
+              <th style="width:160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${options.map((opt, index) => `
+              <tr data-index="${index}" data-group="${group.key}">
+                <td><input type="text" value="${escapeHtml(opt.id)}" data-field="id"></td>
+                <td><input type="text" value="${escapeHtml(opt.label)}" data-field="label"></td>
+                <td><input type="number" min="0" step="1" value="${Number.isFinite(opt.price) ? opt.price : 0}" data-field="price"></td>
+                <td><input type="text" value="${escapeHtml(opt.imageUrl || "")}" data-field="imageUrl"></td>
+                <td style="text-align:center;"><input type="checkbox" ${opt.enabled ? "checked" : ""} data-field="enabled"></td>
+                <td>
+                  <div class="admin-row-actions">
+                    <button data-action="move-up">Up</button>
+                    <button data-action="move-down">Down</button>
+                    <button data-action="delete" class="danger">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+      els.adminSections.appendChild(section);
+    });
+    updateAdminStatus();
+  }
+
+  function escapeHtml(str){
+    return String(str || "").replace(/[&<>"]+/g, (m) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;"
+    }[m] || m));
   }
 
   // =========================
@@ -876,14 +1353,41 @@
   }
 
   // =========================
+  // ADMIN HELPERS
+  // =========================
+  function openAdminPrompt(){
+    els.adminPrompt.style.display = "flex";
+    els.adminPassword.value = "";
+    els.adminPassword.focus();
+  }
+
+  function closeAdminPrompt(){
+    els.adminPrompt.style.display = "none";
+  }
+
+  function enableAdminMode(){
+    adminState.enabled = true;
+    saveAdminState();
+    toast("Admin mode enabled");
+    renderAdmin();
+  }
+
+  function disableAdminMode(){
+    adminState.enabled = false;
+    saveAdminState();
+    els.adminPanel.style.display = "none";
+    toast("Admin mode disabled");
+  }
+
+  // =========================
   // EVENTS
   // =========================
   function initSelects(){
     if (forcedModelId){
-      const model = findById(DATA.models, forcedModelId);
+      const model = getModel(forcedModelId);
       if (model){
-        setSingleOption(els.model, { id:model.id, name:model.name, price:model.basePrice });
-        els.model.value = model.id;
+        setSingleOption(els.model, { id: forcedModelId, label: model.label, price: 0 });
+        els.model.value = forcedModelId;
       }else{
         setSelectOptions(els.model, [], "Invalid route");
       }
@@ -896,13 +1400,13 @@
     setSelectOptions(els.lights, [], "Select lights…");
   }
 
-  els.model.addEventListener("change", (e)=>{ state.modelId = e.target.value; render(); });
-  els.color.addEventListener("change", (e)=>{ state.colorId = e.target.value; render(); });
-  els.gearing.addEventListener("change", (e)=>{ state.gearingId = e.target.value; render(); });
-  els.rack.addEventListener("change", (e)=>{ state.rackId = e.target.value; render(); });
-  els.lights.addEventListener("change", (e)=>{ state.lightsId = e.target.value; render(); });
-  els.qty.addEventListener("input", (e)=>{ state.qty = normalizeQty(e.target.value); render(); });
-  els.notes.addEventListener("input", (e)=>{ state.notes = e.target.value || ""; render(); });
+  els.model.addEventListener("change", (e)=>{ state.modelId = e.target.value; renderBuyer(); });
+  els.color.addEventListener("change", (e)=>{ state.colorId = e.target.value; renderBuyer(); });
+  els.gearing.addEventListener("change", (e)=>{ state.gearingId = e.target.value; renderBuyer(); });
+  els.rack.addEventListener("change", (e)=>{ state.rackId = e.target.value; renderBuyer(); });
+  els.lights.addEventListener("change", (e)=>{ state.lightsId = e.target.value; renderBuyer(); });
+  els.qty.addEventListener("input", (e)=>{ state.qty = normalizeQty(e.target.value); renderBuyer(); });
+  els.notes.addEventListener("input", (e)=>{ state.notes = e.target.value || ""; renderBuyer(); });
 
   els.btnReset.addEventListener("click", ()=>{
     state.modelId = "";
@@ -915,7 +1419,7 @@
     els.qty.value = "1";
     els.notes.value = "";
     initSelects();
-    render();
+    renderBuyer();
     toast("Reset complete.");
   });
 
@@ -950,17 +1454,143 @@
     }, 700);
   });
 
+  els.btnAdmin.addEventListener("click", ()=>{
+    if (adminState.enabled){
+      renderAdmin();
+      return;
+    }
+    openAdminPrompt();
+  });
+
+  els.adminCancel.addEventListener("click", ()=>{
+    closeAdminPrompt();
+  });
+
+  els.adminSubmit.addEventListener("click", ()=>{
+    const value = els.adminPassword.value || "";
+    if (value === ADMIN_PASSWORD){
+      closeAdminPrompt();
+      enableAdminMode();
+    }else{
+      toast("Wrong password");
+    }
+  });
+
+  els.adminPassword.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter"){
+      els.adminSubmit.click();
+    }
+  });
+
+  els.btnExitAdmin.addEventListener("click", ()=>{
+    disableAdminMode();
+  });
+
+  els.btnRefreshSheet.addEventListener("click", ()=>{
+    loadConfigFromSheet(false);
+  });
+
+  els.btnResetSheet.addEventListener("click", ()=>{
+    loadConfigFromSheet(false);
+  });
+
+  els.btnResetDefaults.addEventListener("click", ()=>{
+    CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    reconcileSelections();
+    renderBuyer();
+    renderAdmin();
+    toast("Reset to local defaults.");
+  });
+
+  els.btnSaveSheet.addEventListener("click", ()=>{
+    saveConfigToSheet();
+  });
+
+  els.adminModelSelect.addEventListener("change", (e)=>{
+    adminState.modelId = e.target.value;
+    renderAdmin();
+  });
+
+  els.adminTabs.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    adminState.activeGroup = btn.dataset.group || adminState.activeGroup;
+    renderAdmin();
+  });
+
+  els.adminSections.addEventListener("click", (e)=>{
+    const actionBtn = e.target.closest("button");
+    if (!actionBtn) return;
+    const action = actionBtn.dataset.action;
+    const group = actionBtn.dataset.group || actionBtn.closest("tr")?.dataset.group;
+    if (!group) return;
+    const model = CONFIG.models[adminState.modelId];
+    const options = model.options[group];
+    if (action === "add-option"){
+      options.push({
+        id: `new-${Date.now()}`,
+        label: "",
+        price: 0,
+        imageUrl: "",
+        enabled: true
+      });
+      renderAdmin();
+      return;
+    }
+    const row = actionBtn.closest("tr");
+    const index = row ? Number(row.dataset.index) : -1;
+    if (index < 0) return;
+    if (action === "delete"){
+      options.splice(index, 1);
+    }
+    if (action === "move-up" && index > 0){
+      [options[index - 1], options[index]] = [options[index], options[index - 1]];
+    }
+    if (action === "move-down" && index < options.length - 1){
+      [options[index + 1], options[index]] = [options[index], options[index + 1]];
+    }
+    renderAdmin();
+  });
+
+  els.adminSections.addEventListener("input", (e)=>{
+    const input = e.target;
+    const row = input.closest("tr");
+    if (!row) return;
+    const group = row.dataset.group;
+    const index = Number(row.dataset.index);
+    const field = input.dataset.field;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model || !model.options[group] || !model.options[group][index]) return;
+    const option = model.options[group][index];
+    if (field === "enabled"){
+      option.enabled = input.checked;
+    }else if (field === "price"){
+      option.price = Number(input.value);
+    }else if (field === "id"){
+      option.id = input.value.trim();
+    }else if (field === "label"){
+      option.label = input.value;
+    }else if (field === "imageUrl"){
+      option.imageUrl = input.value.trim();
+    }
+  });
+
   // =========================
   // INIT
   // =========================
   loadState();
+  loadAdminState();
   initSelects();
   els.qty.value = String(state.qty);
   els.notes.value = state.notes || "";
-  render();
+  renderBuyer();
   if (routeError){
     toast(routeError);
   }
+  if (adminState.enabled){
+    renderAdmin();
+  }
+  loadConfigFromSheet(true);
 })();
 </script>
 </body>
