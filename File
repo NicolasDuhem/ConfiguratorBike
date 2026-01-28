@@ -205,16 +205,6 @@
       white-space: pre-wrap;
     }
 
-    .option-preview{
-      margin-top: 8px;
-      max-height: 120px;
-      width: 100%;
-      object-fit: contain;
-      border: 1px solid rgba(16,18,24,.12);
-      border-radius: 12px;
-      display:none;
-      background:#fff;
-    }
     .composite-card{
       padding: 12px;
       background: #f7f8fb;
@@ -222,12 +212,12 @@
       border-radius: 14px;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:12px;
     }
     .composite-preview{
       position: relative;
       width: 100%;
-      max-width: 420px;
+      max-width: 640px;
       aspect-ratio: 16 / 9;
       background: #fff;
       border: 1px solid var(--border);
@@ -236,6 +226,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      margin: 0 auto;
     }
     .composite-preview img{
       position: absolute;
@@ -254,45 +245,24 @@
     }
     .composite-actions{
       display:flex;
-      gap:8px;
+      gap:10px;
       flex-wrap:wrap;
-    }
-    .layers-list{
-      display:grid;
-      gap:10px;
-    }
-    .layer-item{
-      display:grid;
-      grid-template-columns: 54px 1fr;
-      gap:10px;
       align-items:center;
-      padding: 10px;
-      border:1px solid var(--border);
-      border-radius: 12px;
-      background: #fff;
+      justify-content:space-between;
     }
-    .layer-thumb{
-      width: 54px;
-      height: 40px;
-      border-radius: 10px;
-      border:1px solid var(--border);
-      background:#fff;
-      object-fit: contain;
-    }
-    .layer-actions{
+    .composite-toggle{
       display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-    }
-    .layer-meta{
-      font-size: 12px;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      font-weight:700;
       color: var(--muted);
-      margin-bottom: 6px;
     }
-    .layer-title{
-      font-weight: 700;
-      font-size: 13px;
-      margin-bottom: 4px;
+    .composite-toggle input{
+      width:auto;
+    }
+    .composite-actions button{
+      margin-left:auto;
     }
 
     .admin-overlay{
@@ -450,19 +420,18 @@
 
         <div class="composite-card">
           <div class="line">
-            <strong>Composite (layered PNG/WebP)</strong>
+            <strong>Composite preview</strong>
           </div>
           <div class="composite-preview" id="compositePreview">
             <div class="composite-empty" id="compositeEmpty">No images for current selections.</div>
           </div>
           <div class="composite-actions">
-            <button id="btnDownloadCompositeWhite" class="primary">Download composite (white bg)</button>
-            <button id="btnDownloadCompositeTransparent">Download composite (transparent)</button>
+            <label class="composite-toggle">
+              <input id="compositeWhiteBg" type="checkbox" checked>
+              White background
+            </label>
+            <button id="btnDownloadComposite" class="primary">Download composite (1920×1080)</button>
           </div>
-          <div class="line" style="margin-top:4px;">
-            <strong>Image layers</strong>
-          </div>
-          <div class="layers-list" id="imageLayersList"></div>
         </div>
 
         <div class="muted" style="font-size:12px; line-height:1.35">
@@ -544,33 +513,33 @@
             label: "Color",
             required: true,
             options: [
-              { id: "black", label: "Black", price: 0, imageUrl: "", enabled: true },
-              { id: "red", label: "Red", price: 0, imageUrl: "", enabled: true }
+              { id: "black", label: "Black", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "red", label: "Red", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           gearing: {
             label: "Gearing",
             required: true,
             options: [
-              { id: "1", label: "1-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+              { id: "1", label: "1-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           rack: {
             label: "Rack",
             required: true,
             options: [
-              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true },
-              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           lights: {
             label: "Lights",
             required: true,
             options: [
-              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
-              { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
+              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           }
         }
@@ -583,30 +552,30 @@
             label: "Color",
             required: true,
             options: [
-              { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
-              { id: "green", label: "Green", price: 0, imageUrl: "", enabled: true }
+              { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "green", label: "Green", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           gearing: {
             label: "Gearing",
             required: true,
             options: [
-              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           rack: {
             label: "Rack",
             required: true,
             options: [
-              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           lights: {
             label: "Lights",
             required: true,
             options: [
-              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           }
         }
@@ -619,32 +588,32 @@
             label: "Color",
             required: true,
             options: [
-              { id: "yellow", label: "Yellow", price: 0, imageUrl: "", enabled: true },
-              { id: "raw-lacquer", label: "Raw Lacquer", price: 0, imageUrl: "", enabled: true }
+              { id: "yellow", label: "Yellow", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "raw-lacquer", label: "Raw Lacquer", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           gearing: {
             label: "Gearing",
             required: true,
             options: [
-              { id: "2", label: "2-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "8", label: "8-speed", price: 0, imageUrl: "", enabled: true }
+              { id: "2", label: "2-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "8", label: "8-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           rack: {
             label: "Rack",
             required: true,
             options: [
-              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           lights: {
             label: "Lights",
             required: true,
             options: [
-              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true },
-              { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true }
+              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "dynamo", label: "Dynamo lighting", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           }
         }
@@ -657,30 +626,30 @@
             label: "Color",
             required: true,
             options: [
-              { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true },
-              { id: "line-green", label: "Line Green", price: 0, imageUrl: "", enabled: true }
+              { id: "blue-elec", label: "Blue Electric", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "line-green", label: "Line Green", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           gearing: {
             label: "Gearing",
             required: true,
             options: [
-              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           rack: {
             label: "Rack",
             required: true,
             options: [
-              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           lights: {
             label: "Lights",
             required: true,
             options: [
-              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           }
         }
@@ -693,31 +662,31 @@
             label: "Color",
             required: true,
             options: [
-              { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
-              { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
-              { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
+              { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           gearing: {
             label: "Gearing",
             required: true,
             options: [
-              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           rack: {
             label: "Rack",
             required: true,
             options: [
-              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true }
+              { id: "no", label: "No rack", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           lights: {
             label: "Lights",
             required: true,
             options: [
-              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true }
+              { id: "battery", label: "Battery lights", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           }
         }
@@ -730,31 +699,31 @@
             label: "Color",
             required: true,
             options: [
-              { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true },
-              { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true },
-              { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true }
+              { id: "orange", label: "Orange", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "sand", label: "Sand", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "champagne", label: "Champagne", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           gearing: {
             label: "Gearing",
             required: true,
             options: [
-              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true },
-              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true }
+              { id: "4", label: "4-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 },
+              { id: "12", label: "12-speed", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           rack: {
             label: "Rack",
             required: true,
             options: [
-              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true }
+              { id: "yes", label: "Rack included", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           },
           lights: {
             label: "Lights",
             required: true,
             options: [
-              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true }
+              { id: "battery-elec", label: "Battery lights (Electric)", price: 0, imageUrl: "", enabled: true, layerPriority: 0 }
             ]
           }
         }
@@ -803,9 +772,8 @@
     constraintMsg: $("constraintMsg"),
     compositePreview: $("compositePreview"),
     compositeEmpty: $("compositeEmpty"),
-    imageLayersList: $("imageLayersList"),
-    btnDownloadCompositeWhite: $("btnDownloadCompositeWhite"),
-    btnDownloadCompositeTransparent: $("btnDownloadCompositeTransparent"),
+    compositeWhiteBg: $("compositeWhiteBg"),
+    btnDownloadComposite: $("btnDownloadComposite"),
 
     validDot: $("validDot"),
     validText: $("validText"),
@@ -931,6 +899,11 @@
           }
           if (!Array.isArray(model.groups[key].options)){
             model.groups[key].options = [];
+          }else{
+            model.groups[key].options.forEach((option) => {
+              const priority = Number(option.layerPriority);
+              option.layerPriority = Number.isFinite(priority) ? Math.trunc(priority) : 0;
+            });
           }
         }
       });
@@ -983,17 +956,6 @@
     return options.filter(opt => opt.enabled);
   }
 
-  function updatePreview(imgEl, option){
-    if (!imgEl) return;
-    if (option && option.imageUrl){
-      imgEl.src = option.imageUrl;
-      imgEl.style.display = "block";
-    }else{
-      imgEl.removeAttribute("src");
-      imgEl.style.display = "none";
-    }
-  }
-
   function getCompositeGroupOrder(model){
     if (!model || !Array.isArray(model.groupsOrder)) return [];
     const order = model.groupsOrder.slice();
@@ -1003,10 +965,17 @@
     return order;
   }
 
+  function getLayerPriority(option){
+    const priority = Number(option && option.layerPriority);
+    return Number.isFinite(priority) ? priority : 0;
+  }
+
   function getSelectedImageLayers(){
     const model = getModel(state.modelId);
     if (!model) return [];
     const order = getCompositeGroupOrder(model);
+    const orderIndex = new Map();
+    order.forEach((key, index) => orderIndex.set(key, index));
     const layers = [];
     order.forEach((groupKey) => {
       const group = model.groups[groupKey];
@@ -1020,8 +989,16 @@
         groupLabel: group.label || titleCaseFromKey(groupKey),
         optionId: option.id,
         optionLabel: option.label,
-        imageUrl: option.imageUrl
+        imageUrl: option.imageUrl,
+        layerPriority: getLayerPriority(option),
+        orderIndex: orderIndex.get(groupKey) ?? 0
       });
+    });
+    layers.sort((a, b) => {
+      if (a.layerPriority !== b.layerPriority){
+        return a.layerPriority - b.layerPriority;
+      }
+      return a.orderIndex - b.orderIndex;
     });
     return layers;
   }
@@ -1042,35 +1019,6 @@
       img.alt = `${layer.groupLabel}: ${layer.optionLabel}`;
       img.src = layer.imageUrl;
       els.compositePreview.appendChild(img);
-    });
-  }
-
-  function renderImageLayersList(layers){
-    if (!els.imageLayersList) return;
-    els.imageLayersList.innerHTML = "";
-    if (!layers.length){
-      const empty = document.createElement("div");
-      empty.className = "muted";
-      empty.style.fontSize = "12px";
-      empty.textContent = "No images for current selections.";
-      els.imageLayersList.appendChild(empty);
-      return;
-    }
-    layers.forEach((layer) => {
-      const item = document.createElement("div");
-      item.className = "layer-item";
-      item.innerHTML = `
-        <img class="layer-thumb" src="${escapeHtml(layer.imageUrl)}" alt="${escapeHtml(layer.groupLabel)} thumbnail">
-        <div>
-          <div class="layer-title">${escapeHtml(layer.groupLabel)} — ${escapeHtml(layer.optionLabel)}</div>
-          <div class="layer-meta">${escapeHtml(layer.groupKey)} / ${escapeHtml(layer.optionId)}</div>
-          <div class="layer-actions">
-            <button data-action="layer-open" data-url="${escapeHtml(layer.imageUrl)}">Open</button>
-            <button data-action="layer-download" data-url="${escapeHtml(layer.imageUrl)}" data-label="${escapeHtml(layer.optionLabel)}">Download</button>
-          </div>
-        </div>
-      `;
-      els.imageLayersList.appendChild(item);
     });
   }
 
@@ -1101,19 +1049,16 @@
       toast("No layers to export.");
       return;
     }
-    const container = els.compositePreview;
-    const width = container?.clientWidth || 700;
-    const height = container?.clientHeight || 400;
-    const scale = window.devicePixelRatio || 1;
+    const width = 1920;
+    const height = 1080;
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.floor(width * scale));
-    canvas.height = Math.max(1, Math.floor(height * scale));
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx){
       toast("Canvas not supported in this browser.");
       return;
     }
-    ctx.scale(scale, scale);
     if (opts && opts.background === "white"){
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
@@ -1123,11 +1068,15 @@
         const img = await loadLayerImage(layer.imageUrl);
         drawContain(ctx, img, width, height);
       }
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob){
-        toast("Unable to export PNG from canvas.");
-        return;
-      }
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((created) => {
+          if (!created){
+            reject(new Error("Canvas export failed"));
+          }else{
+            resolve(created);
+          }
+        }, "image/png");
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -1138,28 +1087,7 @@
       URL.revokeObjectURL(url);
     }catch(err){
       console.error(err);
-      toast("Cannot export composite because some images block cross-origin canvas. Use Open/Download per layer instead.");
-    }
-  }
-
-  async function downloadLayerImage(url, label){
-    try{
-      const res = await fetch(url, { mode: "cors", credentials: "omit" });
-      if (!res.ok){
-        throw new Error("Failed download");
-      }
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `${(label || "layer").replace(/\s+/g, "-").toLowerCase()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
-    }catch(err){
-      window.open(url, "_blank", "noopener");
-      toast("Download blocked by CORS; opened image instead.");
+      toast("Cannot export composite because some images block cross-origin canvas. Ask to host images with CORS enabled.");
     }
   }
 
@@ -1572,6 +1500,10 @@
           if (!Number.isFinite(price) || price < 0){
             errors.push(`${modelId} ${group.label || key} option "${opt.id}": price must be a number >= 0`);
           }
+          const layerPriority = Number(opt.layerPriority);
+          if (!Number.isFinite(layerPriority)){
+            errors.push(`${modelId} ${group.label || key} option "${opt.id}": layerPriority must be a number`);
+          }
         });
       });
     });
@@ -1634,7 +1566,6 @@
       const selectOptions = buildOptionOptions(groupState.enabled, groupState.selectedId, `Select ${label.toLowerCase()}…`, !groupState.fixed);
       const fixedAttr = groupState.fixed ? "data-fixed=\"true\"" : "data-fixed=\"false\"";
       const disabledAttr = groupState.disabled ? "disabled" : "";
-      const previewId = `preview-${groupState.key}`;
       steps.push(`
         <div class="step">
           <div class="shd">
@@ -1651,7 +1582,6 @@
                 ${selectOptions}
               </select>
             </label>
-            <img id="${previewId}" class="option-preview" alt="Selected ${escapeHtml(label)} preview" />
           </div>
         </div>
       `);
@@ -1681,11 +1611,6 @@
 
     els.stepsGrid.innerHTML = steps.join("");
 
-    (v.groups || []).forEach((groupState) => {
-      const previewEl = document.getElementById(`preview-${groupState.key}`);
-      updatePreview(previewEl, groupState.selectedOption);
-    });
-
     els.selectionList.innerHTML = "";
     const addLi = (label, val) => {
       const li = document.createElement("li");
@@ -1703,7 +1628,6 @@
 
     const layers = getSelectedImageLayers();
     renderComposite(layers);
-    renderImageLayersList(layers);
 
     saveState();
   }
@@ -1799,8 +1723,9 @@
               <th>Label</th>
               <th style="width:90px;">Price</th>
               <th>Image URL</th>
+              <th style="width:120px;">Layer Priority</th>
               <th style="width:80px;">Enabled</th>
-              <th style="width:160px;">Actions</th>
+              <th style="width:200px;">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1810,11 +1735,14 @@
                 <td><input type="text" value="${escapeHtml(opt.label)}" data-field="label"></td>
                 <td><input type="number" min="0" step="1" value="${Number.isFinite(opt.price) ? opt.price : 0}" data-field="price"></td>
                 <td><input type="text" value="${escapeHtml(opt.imageUrl || "")}" data-field="imageUrl"></td>
+                <td><input type="number" step="1" value="${Number.isFinite(Number(opt.layerPriority)) ? Number(opt.layerPriority) : 0}" data-field="layerPriority"></td>
                 <td style="text-align:center;"><input type="checkbox" ${opt.enabled ? "checked" : ""} data-field="enabled"></td>
                 <td>
                   <div class="admin-row-actions">
                     <button data-action="option-move-up" ${index === 0 ? "disabled" : ""}>Up</button>
                     <button data-action="option-move-down" ${index === activeOptions.length - 1 ? "disabled" : ""}>Down</button>
+                    <button data-action="option-top">Make this top</button>
+                    <button data-action="option-bottom">Make this bottom</button>
                     <button data-action="option-delete" class="danger">Delete</button>
                   </div>
                 </td>
@@ -1960,28 +1888,10 @@
     }, 700);
   });
 
-  els.btnDownloadCompositeWhite.addEventListener("click", ()=>{
+  els.btnDownloadComposite.addEventListener("click", ()=>{
     const layers = getSelectedImageLayers();
-    exportCompositePNG(layers, { background: "white" });
-  });
-
-  els.btnDownloadCompositeTransparent.addEventListener("click", ()=>{
-    const layers = getSelectedImageLayers();
-    exportCompositePNG(layers, { background: "transparent" });
-  });
-
-  els.imageLayersList.addEventListener("click", (e)=>{
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    const action = btn.dataset.action;
-    const url = btn.dataset.url;
-    if (!url) return;
-    if (action === "layer-open"){
-      window.open(url, "_blank", "noopener");
-    }
-    if (action === "layer-download"){
-      downloadLayerImage(url, btn.dataset.label || "");
-    }
+    const background = els.compositeWhiteBg && els.compositeWhiteBg.checked ? "white" : "transparent";
+    exportCompositePNG(layers, { background });
   });
 
   els.btnAdmin.addEventListener("click", ()=>{
@@ -2166,7 +2076,8 @@
         label: "",
         price: 0,
         imageUrl: "",
-        enabled: true
+        enabled: true,
+        layerPriority: 0
       });
       renderBuyer();
       renderAdmin();
@@ -2183,6 +2094,12 @@
     }
     if (action === "option-move-down" && index < options.length - 1){
       [options[index + 1], options[index]] = [options[index], options[index + 1]];
+    }
+    if (action === "option-top"){
+      options[index].layerPriority = 1000;
+    }
+    if (action === "option-bottom"){
+      options[index].layerPriority = -1000;
     }
     renderBuyer();
     renderAdmin();
@@ -2202,6 +2119,9 @@
       option.enabled = input.checked;
     }else if (field === "price"){
       option.price = Number(input.value);
+    }else if (field === "layerPriority"){
+      const parsed = Number(input.value);
+      option.layerPriority = Number.isFinite(parsed) ? Math.trunc(parsed) : 0;
     }else if (field === "id"){
       option.id = input.value.trim();
     }else if (field === "label"){
