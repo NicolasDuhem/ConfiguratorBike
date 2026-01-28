@@ -1085,25 +1085,73 @@
     }
   }
 
+  async function fetchConfigFromSheet(){
+    const url = `${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`;
+    let responseText = "";
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "omit"
+    });
+    responseText = await res.text();
+    let json;
+    try{
+      json = JSON.parse(responseText);
+    }catch(err){
+      const parseError = new Error("Config response is not valid JSON.");
+      parseError.responseText = responseText;
+      throw parseError;
+    }
+    if (!json || json.ok !== true || !json.data){
+      const message = json && json.error ? json.error : "Config response missing ok/data.";
+      const apiError = new Error(message);
+      apiError.responseText = responseText;
+      throw apiError;
+    }
+    adminState.lastSheetUpdatedAt = json.meta && json.meta.updated_at ? json.meta.updated_at : "";
+    updateAdminStatus();
+    return json.data;
+  }
+
+  async function saveConfigToSheet(configObj){
+    const url = `${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`;
+    const body = new URLSearchParams();
+    body.set("payload", JSON.stringify(configObj));
+    let responseText = "";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: body.toString(),
+      credentials: "omit"
+    });
+    responseText = await res.text();
+    let json;
+    try{
+      json = JSON.parse(responseText);
+    }catch(err){
+      const parseError = new Error("Save response is not valid JSON.");
+      parseError.responseText = responseText;
+      throw parseError;
+    }
+    if (!json || json.ok !== true){
+      const message = json && json.error ? json.error : responseText;
+      const apiError = new Error(message || "Save failed.");
+      apiError.responseText = responseText;
+      throw apiError;
+    }
+    return json;
+  }
+
   async function loadConfigFromSheet(useFallbackOnError){
     try{
-      const res = await fetch(`${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`);
-      const payload = await res.json();
-      if (!payload || !payload.ok){
-        throw new Error("API returned ok:false");
-      }
-      if (!payload.data){
-        throw new Error("No config data");
-      }
-      CONFIG = payload.data;
-      adminState.lastSheetUpdatedAt = payload.meta && payload.meta.updated_at ? payload.meta.updated_at : "";
-      updateAdminStatus();
+      CONFIG = await fetchConfigFromSheet();
       reconcileSelections();
       renderBuyer();
       renderAdmin();
       toast("Config loaded from sheet.");
       return true;
     }catch(err){
+      console.error("Failed to load config from sheet.", err, err && err.responseText ? err.responseText : "");
       if (useFallbackOnError){
         CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
         reconcileSelections();
@@ -1111,13 +1159,14 @@
         renderAdmin();
         toast("Using local defaults (config API unavailable)");
       }else{
-        toast("Failed to load sheet config.");
+        const message = err && err.message ? err.message : "Unknown error";
+        toast(`Failed to load sheet config: ${message}`);
       }
       return false;
     }
   }
 
-  async function saveConfigToSheet(){
+  async function saveConfigFlow(){
     const errors = validateConfig(CONFIG);
     if (errors.length){
       toast("Fix validation errors before saving:\n" + errors.join("\n"));
@@ -1126,20 +1175,14 @@
     adminState.lastSaveAttempt = new Date().toLocaleString();
     updateAdminStatus();
     try{
-      const res = await fetch(`${CONFIG_API_BASE}?key=${encodeURIComponent(CONFIG_API_KEY)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(CONFIG)
-      });
-      const payload = await res.json();
-      if (!payload || !payload.ok){
-        throw new Error("Save failed");
-      }
-      toast("Saved to sheet.");
+      await saveConfigToSheet(CONFIG);
+      toast("Saved to Sheet");
       renderBuyer();
       return true;
     }catch(err){
-      toast("Failed to save to sheet.");
+      const message = err && err.message ? err.message : "Unknown error";
+      console.error("Failed to save config to sheet.", err, err && err.responseText ? err.responseText : "");
+      toast(`Failed to save to Sheet: ${message}`);
       return false;
     }
   }
@@ -1486,12 +1529,28 @@
     disableAdminMode();
   });
 
+  async function refreshConfigFromSheet(){
+    try{
+      CONFIG = await fetchConfigFromSheet();
+      reconcileSelections();
+      renderBuyer();
+      renderAdmin();
+      toast("Config refreshed from sheet.");
+      return true;
+    }catch(err){
+      const message = err && err.message ? err.message : "Unknown error";
+      console.error("Failed to refresh config from sheet.", err, err && err.responseText ? err.responseText : "");
+      toast(`Failed to refresh from Sheet: ${message}`);
+      return false;
+    }
+  }
+
   els.btnRefreshSheet.addEventListener("click", ()=>{
-    loadConfigFromSheet(false);
+    refreshConfigFromSheet();
   });
 
   els.btnResetSheet.addEventListener("click", ()=>{
-    loadConfigFromSheet(false);
+    refreshConfigFromSheet();
   });
 
   els.btnResetDefaults.addEventListener("click", ()=>{
@@ -1503,7 +1562,7 @@
   });
 
   els.btnSaveSheet.addEventListener("click", ()=>{
-    saveConfigToSheet();
+    saveConfigFlow();
   });
 
   els.adminModelSelect.addEventListener("change", (e)=>{
