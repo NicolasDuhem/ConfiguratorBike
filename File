@@ -387,6 +387,43 @@
     .admin-inline .small{max-width: 180px}
     .admin-inline input[type="checkbox"]{width:auto}
     .admin-help{font-size:12px; color: var(--muted)}
+    .combo-layer-card{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 12px;
+      padding: 10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .combo-layer-header{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .combo-layer-fields{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap:8px;
+      align-items:end;
+    }
+    .combo-layer-fields input[type="checkbox"]{width:auto}
+    .combo-layer-map{
+      border:1px dashed var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      background: #f8f9fd;
+    }
+    .combo-layer-map table{width:100%; border-collapse:collapse; font-size:12px}
+    .combo-layer-map th,
+    .combo-layer-map td{
+      border-bottom:1px solid var(--border);
+      padding:6px;
+      text-align:left;
+    }
+    .combo-layer-map th{color: var(--muted); font-weight:700}
     .sku-cell{display:flex; flex-direction:column; gap:6px}
     .sku-summary{font-size:11px; color: var(--muted)}
     .sku-editor{
@@ -541,6 +578,7 @@
       </label>
       <div class="admin-section" id="adminGroupsSection"></div>
       <div class="admin-section" id="adminOptionsSection"></div>
+      <div class="admin-section" id="adminComboLayersSection"></div>
     </div>
   </div>
 
@@ -867,6 +905,7 @@
     adminModelSelect: $("adminModelSelect"),
     adminGroupsSection: $("adminGroupsSection"),
     adminOptionsSection: $("adminOptionsSection"),
+    adminComboLayersSection: $("adminComboLayersSection"),
     adminStatusLine: $("adminStatusLine"),
     adminSizeLine: $("adminSizeLine"),
     btnRefreshSheet: $("btnRefreshSheet"),
@@ -961,6 +1000,9 @@
       }
       const skuLength = Number(model.skuLength);
       model.skuLength = Number.isFinite(skuLength) && skuLength > 0 ? Math.trunc(skuLength) : DEFAULT_SKU_LENGTH;
+      if (!Array.isArray(model.comboLayers)){
+        model.comboLayers = [];
+      }
       model.groupsOrder.forEach((key) => {
         if (!model.groups[key]){
           model.groups[key] = {
@@ -987,6 +1029,27 @@
             });
           }
         }
+      });
+      model.comboLayers = model.comboLayers.map((layer, index) => {
+        const normalized = layer && typeof layer === "object" ? layer : {};
+        if (!normalized.id){
+          normalized.id = `combo-${index + 1}`;
+        }
+        if (!normalized.label){
+          normalized.label = titleCaseFromKey(normalized.id);
+        }
+        if (typeof normalized.enabled !== "boolean"){
+          normalized.enabled = true;
+        }
+        const priority = Number(normalized.layerPriority);
+        normalized.layerPriority = Number.isFinite(priority) ? Math.trunc(priority) : 0;
+        if (!Array.isArray(normalized.dependsOn)){
+          normalized.dependsOn = [];
+        }
+        if (!normalized.map || typeof normalized.map !== "object"){
+          normalized.map = {};
+        }
+        return normalized;
       });
     });
     return config;
@@ -1151,6 +1214,37 @@
     return Number.isFinite(priority) ? priority : 0;
   }
 
+  function getComboLayers(model){
+    return Array.isArray(model?.comboLayers) ? model.comboLayers : [];
+  }
+
+  function getComboLayerGroups(model, comboLayer){
+    const dependsOn = Array.isArray(comboLayer?.dependsOn) ? comboLayer.dependsOn : [];
+    const groupAKey = dependsOn[0] || "";
+    const groupBKey = dependsOn[1] || "";
+    const groupA = groupAKey ? model?.groups?.[groupAKey] : null;
+    const groupB = groupBKey ? model?.groups?.[groupBKey] : null;
+    const optionsA = groupA ? (Array.isArray(groupA.options) ? groupA.options : []) : [];
+    const optionsB = groupB ? (Array.isArray(groupB.options) ? groupB.options : []) : [];
+    return { groupAKey, groupBKey, groupA, groupB, optionsA, optionsB };
+  }
+
+  function getComboLayerCombinations(model, comboLayer){
+    const { groupAKey, groupBKey, groupA, groupB, optionsA, optionsB } = getComboLayerGroups(model, comboLayer);
+    if (!groupAKey || !groupBKey || !groupA || !groupB) return [];
+    const combos = [];
+    optionsA.forEach((optA) => {
+      optionsB.forEach((optB) => {
+        combos.push({
+          key: `${optA.id}|${optB.id}`,
+          optionA: optA,
+          optionB: optB
+        });
+      });
+    });
+    return combos;
+  }
+
   function getSelectedImageLayers(){
     const model = getModel(state.modelId);
     if (!model) return [];
@@ -1172,14 +1266,43 @@
         optionLabel: option.label,
         imageUrl: option.imageUrl,
         layerPriority: getLayerPriority(option),
-        orderIndex: orderIndex.get(groupKey) ?? 0
+        orderIndex: orderIndex.get(groupKey) ?? 0,
+        isCombo: false
       });
     });
+    const comboLayers = getComboLayers(model);
+    comboLayers.forEach((comboLayer) => {
+      if (!comboLayer || comboLayer.enabled === false) return;
+      const dependsOn = Array.isArray(comboLayer.dependsOn) ? comboLayer.dependsOn : [];
+      if (dependsOn.length < 2) return;
+      const selectedIds = dependsOn.map((groupKey) => state.selections[groupKey] || "");
+      if (selectedIds.some((id) => !id)) return;
+      const key = selectedIds.join("|");
+      const imageUrl = comboLayer.map && comboLayer.map[key] ? comboLayer.map[key] : "";
+      if (!imageUrl) return;
+      layers.push({
+        groupKey: comboLayer.id,
+        groupLabel: comboLayer.label || titleCaseFromKey(comboLayer.id),
+        optionId: key,
+        optionLabel: key,
+        imageUrl,
+        layerPriority: getLayerPriority(comboLayer),
+        orderIndex: order.length + layers.length,
+        isCombo: true
+      });
+    });
+
     layers.sort((a, b) => {
       if (a.layerPriority !== b.layerPriority){
         return a.layerPriority - b.layerPriority;
       }
-      return a.orderIndex - b.orderIndex;
+      if (!!a.isCombo !== !!b.isCombo){
+        return a.isCombo ? 1 : -1;
+      }
+      if (a.orderIndex !== b.orderIndex){
+        return a.orderIndex - b.orderIndex;
+      }
+      return String(a.groupKey || "").localeCompare(String(b.groupKey || ""));
     });
     return layers;
   }
@@ -1633,6 +1756,10 @@
     }
   }
 
+  function isValidImageUrl(value){
+    return !value || /^https?:\/\//i.test(value);
+  }
+
   function validateConfig(config){
     const errors = [];
     if (!config || !config.models){
@@ -1674,7 +1801,7 @@
           }else{
             seen.add(opt.id);
           }
-          if (opt.imageUrl && !/^https?:\/\//i.test(opt.imageUrl)){
+          if (!isValidImageUrl(opt.imageUrl)){
             errors.push(`${modelId} ${group.label || key} option "${opt.id}": imageUrl must start with http:// or https://`);
           }
           const price = Number(opt.price);
@@ -1686,6 +1813,53 @@
             errors.push(`${modelId} ${group.label || key} option "${opt.id}": layerPriority must be a number`);
           }
         });
+      });
+      const comboLayers = Array.isArray(model.comboLayers) ? model.comboLayers : [];
+      const comboIds = new Set();
+      comboLayers.forEach((layer, index) => {
+        if (!layer || typeof layer !== "object"){
+          errors.push(`${modelId} combo layer #${index + 1}: layer definition must be an object.`);
+          return;
+        }
+        if (!layer.id){
+          errors.push(`${modelId} combo layer #${index + 1}: id is required.`);
+        }else if (comboIds.has(layer.id)){
+          errors.push(`${modelId} combo layer id "${layer.id}" is duplicated.`);
+        }else{
+          comboIds.add(layer.id);
+        }
+        if (!layer.label){
+          errors.push(`${modelId} combo layer "${layer.id || index + 1}": label is required.`);
+        }
+        if (typeof layer.enabled !== "boolean"){
+          errors.push(`${modelId} combo layer "${layer.id || index + 1}": enabled must be true/false.`);
+        }
+        const layerPriority = Number(layer.layerPriority);
+        if (!Number.isFinite(layerPriority)){
+          errors.push(`${modelId} combo layer "${layer.id || index + 1}": layerPriority must be a number.`);
+        }
+        const dependsOn = Array.isArray(layer.dependsOn) ? layer.dependsOn : [];
+        if (dependsOn.length !== 2){
+          errors.push(`${modelId} combo layer "${layer.id || index + 1}": dependsOn must list exactly 2 group keys.`);
+        }else{
+          if (dependsOn[0] === dependsOn[1]){
+            errors.push(`${modelId} combo layer "${layer.id || index + 1}": dependsOn group keys must be unique.`);
+          }
+          dependsOn.forEach((groupKey) => {
+            if (!model.groups || !model.groups[groupKey]){
+              errors.push(`${modelId} combo layer "${layer.id || index + 1}": dependsOn group "${groupKey}" not found.`);
+            }
+          });
+        }
+        if (layer.map && typeof layer.map === "object"){
+          Object.entries(layer.map).forEach(([key, value]) => {
+            if (!isValidImageUrl(value)){
+              errors.push(`${modelId} combo layer "${layer.id || index + 1}" map "${key}": imageUrl must start with http:// or https://`);
+            }
+          });
+        }else if (layer.map !== undefined){
+          errors.push(`${modelId} combo layer "${layer.id || index + 1}": map must be an object.`);
+        }
       });
     });
     return errors;
@@ -2038,6 +2212,96 @@
       ` : `<div class="admin-help">Add a group to start editing options.</div>`}
     `;
 
+    const comboLayers = getComboLayers(model);
+    els.adminComboLayersSection.innerHTML = `
+      <div class="line" style="margin-bottom:8px;">
+        <strong>Combo layers</strong>
+        <button class="primary" data-action="combo-add">Add combo layer</button>
+      </div>
+      <div class="admin-help" style="margin-bottom:10px;">
+        Combo layers use two groups to map specific option combinations to a single image layer.
+      </div>
+      ${comboLayers.length ? comboLayers.map((layer, index) => {
+        const dependsOn = Array.isArray(layer.dependsOn) ? layer.dependsOn : [];
+        const groupAKey = dependsOn[0] || "";
+        const groupBKey = dependsOn[1] || "";
+        const combos = getComboLayerCombinations(model, layer);
+        const map = layer.map && typeof layer.map === "object" ? layer.map : {};
+        const missingCount = combos.filter((combo) => !String(map[combo.key] || "").trim()).length;
+        const totalCount = combos.length;
+        return `
+          <div class="combo-layer-card" data-layer-index="${index}">
+            <div class="combo-layer-header">
+              <strong>${escapeHtml(layer.label || layer.id || "Combo layer")}</strong>
+              <div class="admin-row-actions">
+                <button data-action="combo-delete" class="danger" data-layer-index="${index}">Delete</button>
+              </div>
+            </div>
+            <div class="combo-layer-fields">
+              <label>Id
+                <input type="text" value="${escapeHtml(layer.id || "")}" data-field="comboId" data-layer-index="${index}">
+              </label>
+              <label>Label
+                <input type="text" value="${escapeHtml(layer.label || "")}" data-field="comboLabel" data-layer-index="${index}">
+              </label>
+              <label>Layer priority
+                <input type="number" step="1" value="${Number.isFinite(Number(layer.layerPriority)) ? Number(layer.layerPriority) : 0}" data-field="comboLayerPriority" data-layer-index="${index}">
+              </label>
+              <label style="flex-direction:row; align-items:center; gap:6px; font-weight:700; color:var(--text);">
+                <input type="checkbox" ${layer.enabled !== false ? "checked" : ""} data-field="comboEnabled" data-layer-index="${index}">
+                Enabled
+              </label>
+              <label>Group A
+                <select data-field="comboDependsA" data-layer-index="${index}">
+                  <option value="">Select group</option>
+                  ${groupsOrder.map((key) => `<option value="${escapeHtml(key)}">${escapeHtml(groups[key]?.label || titleCaseFromKey(key))}</option>`).join("")}
+                </select>
+              </label>
+              <label>Group B
+                <select data-field="comboDependsB" data-layer-index="${index}">
+                  <option value="">Select group</option>
+                  ${groupsOrder.map((key) => `<option value="${escapeHtml(key)}">${escapeHtml(groups[key]?.label || titleCaseFromKey(key))}</option>`).join("")}
+                </select>
+              </label>
+            </div>
+            <div class="combo-layer-map">
+              <div class="admin-inline" style="justify-content:space-between; margin-bottom:8px;">
+                <div class="admin-help">Mapping key uses "${escapeHtml(groupAKey || "groupA")}|${escapeHtml(groupBKey || "groupB")}".</div>
+                <button class="primary" data-action="combo-generate" data-layer-index="${index}">Generate combinations</button>
+              </div>
+              ${totalCount ? `
+                <div class="admin-help ${missingCount ? "warn" : ""}" style="margin-bottom:8px;">
+                  ${missingCount ? `${missingCount} of ${totalCount} combinations missing image URLs.` : "All combinations mapped."}
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Option A</th>
+                      <th>Option B</th>
+                      <th>Key</th>
+                      <th>Image URL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${combos.map((combo) => `
+                      <tr>
+                        <td>${escapeHtml(combo.optionA.label || combo.optionA.id)}</td>
+                        <td>${escapeHtml(combo.optionB.label || combo.optionB.id)}</td>
+                        <td>${escapeHtml(combo.key)}</td>
+                        <td>
+                          <input type="text" value="${escapeHtml(map[combo.key] || "")}" data-field="comboMapValue" data-key="${escapeHtml(combo.key)}" data-layer-index="${index}">
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              ` : `<div class="admin-help">Select two groups to generate mapping rows.</div>`}
+            </div>
+          </div>
+        `;
+      }).join("") : `<div class="admin-help">No combo layers yet. Add one to start mapping combinations.</div>`}
+    `;
+
     const adminGroupSelect = document.getElementById("adminGroupSelect");
     if (adminGroupSelect){
       adminGroupSelect.value = activeGroup;
@@ -2050,6 +2314,18 @@
     if (adminCopySourceGroup){
       adminCopySourceGroup.value = adminState.copySourceGroupKey;
     }
+    const comboDependsSelects = els.adminComboLayersSection.querySelectorAll("select[data-field]");
+    comboDependsSelects.forEach((select) => {
+      const layerIndex = Number(select.dataset.layerIndex);
+      const layer = comboLayers[layerIndex];
+      if (!layer) return;
+      if (select.dataset.field === "comboDependsA"){
+        select.value = (Array.isArray(layer.dependsOn) ? layer.dependsOn[0] : "") || "";
+      }
+      if (select.dataset.field === "comboDependsB"){
+        select.value = (Array.isArray(layer.dependsOn) ? layer.dependsOn[1] : "") || "";
+      }
+    });
     updateAdminStatus();
     renderSkuPreview();
   }
@@ -2626,6 +2902,101 @@
     }
     updateAdminStatus();
     renderBuyer();
+  });
+
+  els.adminComboLayersSection.addEventListener("click", (e)=>{
+    const actionBtn = e.target.closest("button");
+    if (!actionBtn) return;
+    const action = actionBtn.dataset.action;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model) return;
+    model.comboLayers = Array.isArray(model.comboLayers) ? model.comboLayers : [];
+    if (action === "combo-add"){
+      const groupKeys = model.groupsOrder || [];
+      const groupAKey = groupKeys[0] || "";
+      const groupBKey = groupKeys[1] || "";
+      const nextId = `combo-${Date.now()}`;
+      model.comboLayers.push({
+        id: nextId,
+        label: "New combo layer",
+        enabled: true,
+        layerPriority: 0,
+        dependsOn: [groupAKey, groupBKey],
+        map: {}
+      });
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+    if (action === "combo-delete"){
+      const index = Number(actionBtn.dataset.layerIndex);
+      if (!Number.isFinite(index) || !model.comboLayers[index]) return;
+      model.comboLayers.splice(index, 1);
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+    if (action === "combo-generate"){
+      const index = Number(actionBtn.dataset.layerIndex);
+      const layer = model.comboLayers[index];
+      if (!layer) return;
+      layer.map = layer.map && typeof layer.map === "object" ? layer.map : {};
+      const combos = getComboLayerCombinations(model, layer);
+      combos.forEach((combo) => {
+        if (!(combo.key in layer.map)){
+          layer.map[combo.key] = "";
+        }
+      });
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+  });
+
+  els.adminComboLayersSection.addEventListener("input", (e)=>{
+    const input = e.target;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model) return;
+    const layerIndex = Number(input.dataset.layerIndex);
+    const layer = Array.isArray(model.comboLayers) ? model.comboLayers[layerIndex] : null;
+    if (!layer) return;
+    const field = input.dataset.field;
+    if (field === "comboId"){
+      layer.id = input.value.trim();
+    }else if (field === "comboLabel"){
+      layer.label = input.value;
+    }else if (field === "comboLayerPriority"){
+      const parsed = Number(input.value);
+      layer.layerPriority = Number.isFinite(parsed) ? Math.trunc(parsed) : 0;
+    }else if (field === "comboEnabled"){
+      layer.enabled = input.checked;
+    }else if (field === "comboMapValue"){
+      layer.map = layer.map && typeof layer.map === "object" ? layer.map : {};
+      const key = input.dataset.key || "";
+      layer.map[key] = input.value.trim();
+    }
+    updateAdminStatus();
+    renderBuyer();
+  });
+
+  els.adminComboLayersSection.addEventListener("change", (e)=>{
+    const select = e.target;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model) return;
+    const layerIndex = Number(select.dataset.layerIndex);
+    const layer = Array.isArray(model.comboLayers) ? model.comboLayers[layerIndex] : null;
+    if (!layer) return;
+    const field = select.dataset.field;
+    if (field === "comboDependsA" || field === "comboDependsB"){
+      layer.dependsOn = Array.isArray(layer.dependsOn) ? layer.dependsOn : ["", ""];
+      if (field === "comboDependsA"){
+        layer.dependsOn[0] = select.value;
+      }else{
+        layer.dependsOn[1] = select.value;
+      }
+      renderBuyer();
+      renderAdmin();
+    }
   });
 
   // =========================
