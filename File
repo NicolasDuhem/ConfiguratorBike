@@ -176,6 +176,38 @@
     .items ul{margin:0; padding-left: 18px}
     .items li{margin:6px 0; color:#1d2435}
     .muted{color:var(--muted)}
+    .sku-card{
+      padding: 12px;
+      background: #f7f8fb;
+      border:1px solid var(--border);
+      border-radius: 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .sku-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .sku-label{
+      font-size:12px;
+      font-weight:800;
+      color:var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .sku-value{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      letter-spacing: .08em;
+      color: #1d2435;
+      word-break: break-all;
+    }
+    .sku-status{
+      font-size: 12px;
+      color: var(--muted);
+    }
     .badge{
       display:inline-flex; align-items:center; gap:8px;
       font-size:12px; font-weight:800;
@@ -428,6 +460,17 @@
           <div class="line"><span>Grand total</span><strong id="grandTotal">—</strong></div>
         </div>
 
+        <div class="sku-card">
+          <div class="sku-row">
+            <span class="sku-label">SKU:</span>
+            <span class="sku-value" id="skuValue">—</span>
+          </div>
+          <div class="sku-row">
+            <span class="sku-status" id="skuStatus"></span>
+            <button id="btnCopySku" class="primary">Copy SKU</button>
+          </div>
+        </div>
+
         <div class="items">
           <div class="line" style="margin-bottom:8px;">
             <strong>Selected</strong>
@@ -517,6 +560,9 @@
   const CONFIG_API_BASE = "https://script.google.com/macros/s/AKfycbxXozAWB_L2XQhUEVOWd36XPdtqxhHPQbVHbcTzZvcznn6MS9igoZhigt6KBkTvG-0-Qg/exec";
   const CONFIG_API_KEY = "IwillUpdatethepaswordlater";
   const CONFIG_SIZE_WARNING = 200000;
+
+  const DEFAULT_SKU_LENGTH = 30;
+  const SKU_PLACEHOLDER = "_";
 
   // =========================
   // DEFAULT CONFIG (fallback)
@@ -791,6 +837,9 @@
     unitTotal: $("unitTotal"),
     qtyDisplay: $("qtyDisplay"),
     grandTotal: $("grandTotal"),
+    skuValue: $("skuValue"),
+    skuStatus: $("skuStatus"),
+    btnCopySku: $("btnCopySku"),
 
     selectionList: $("selectionList"),
     constraintMsg: $("constraintMsg"),
@@ -910,6 +959,8 @@
       if (!Array.isArray(model.skuFixedDigits)){
         model.skuFixedDigits = [];
       }
+      const skuLength = Number(model.skuLength);
+      model.skuLength = Number.isFinite(skuLength) && skuLength > 0 ? Math.trunc(skuLength) : DEFAULT_SKU_LENGTH;
       model.groupsOrder.forEach((key) => {
         if (!model.groups[key]){
           model.groups[key] = {
@@ -960,6 +1011,85 @@
 
   function validateSkuValue(value){
     return typeof value === "string" && value.trim().length > 0;
+  }
+
+  function getSkuLength(model){
+    const length = Number(model?.skuLength);
+    if (Number.isFinite(length) && length > 0){
+      return Math.trunc(length);
+    }
+    return DEFAULT_SKU_LENGTH;
+  }
+
+  function applySkuDigits(buffer, digits){
+    if (!Array.isArray(buffer) || !Array.isArray(digits)) return;
+    digits.forEach((entry) => {
+      if (!entry) return;
+      const index = parseSkuIndex(entry.index);
+      if (index === null || index > buffer.length) return;
+      const value = String(entry.value ?? "").trim();
+      if (!value) return;
+      buffer[index - 1] = value;
+    });
+  }
+
+  function buildSkuPreview(){
+    const model = getModel(state.modelId);
+    if (!model){
+      return { sku: "", incomplete: true };
+    }
+    const skuLength = getSkuLength(model);
+    const skuBuffer = Array.from({ length: skuLength }, () => SKU_PLACEHOLDER);
+    applySkuDigits(skuBuffer, model.skuFixedDigits);
+    (model.groupsOrder || []).forEach((groupKey) => {
+      const selectedId = state.selections[groupKey];
+      if (!selectedId) return;
+      const option = findOption(model, groupKey, selectedId);
+      if (!option) return;
+      applySkuDigits(skuBuffer, option.skuDigits);
+    });
+    const sku = skuBuffer.join("");
+    const incomplete = skuBuffer.includes(SKU_PLACEHOLDER);
+    return { sku, incomplete };
+  }
+
+  function renderSkuPreview(){
+    const data = buildSkuPreview();
+    if (els.skuValue){
+      els.skuValue.textContent = data.sku || "—";
+    }
+    if (els.skuStatus){
+      els.skuStatus.textContent = data.incomplete ? "Incomplete SKU" : "";
+    }
+    const adminSkuValue = document.getElementById("adminSkuValue");
+    const adminSkuStatus = document.getElementById("adminSkuStatus");
+    if (adminSkuValue){
+      adminSkuValue.textContent = data.sku || "—";
+    }
+    if (adminSkuStatus){
+      adminSkuStatus.textContent = data.incomplete ? "Incomplete SKU" : "";
+    }
+  }
+
+  async function copySkuToClipboard(){
+    const data = buildSkuPreview();
+    const text = data.sku || "";
+    if (!text){
+      toast("No SKU available to copy.");
+      return;
+    }
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("SKU copied to clipboard.");
+    }catch(err){
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      temp.remove();
+      toast("SKU copied to clipboard.");
+    }
   }
 
   function setSelectOptions(selectEl, list, placeholder){
@@ -1679,6 +1809,7 @@
 
     const layers = getSelectedImageLayers();
     renderComposite(layers);
+    renderSkuPreview();
 
     saveState();
   }
@@ -1731,6 +1862,16 @@
     els.adminGroupsSection.innerHTML = `
       <div class="line" style="margin-bottom:8px;">
         <strong>Model Settings</strong>
+      </div>
+      <div class="sku-card" style="margin-bottom:12px;">
+        <div class="sku-row">
+          <span class="sku-label">SKU preview:</span>
+          <span class="sku-value" id="adminSkuValue">—</span>
+        </div>
+        <div class="sku-row">
+          <span class="sku-status" id="adminSkuStatus"></span>
+          <button class="primary" data-action="sku-copy">Copy SKU</button>
+        </div>
       </div>
       <div class="admin-help" style="margin-bottom:10px;">Manage fixed SKU digits that always apply to this model.</div>
       <div class="sku-cell" style="margin-bottom:12px;">
@@ -1910,6 +2051,7 @@
       adminCopySourceGroup.value = adminState.copySourceGroupKey;
     }
     updateAdminStatus();
+    renderSkuPreview();
   }
 
   function escapeHtml(str){
@@ -2019,6 +2161,10 @@
     }
   });
 
+  els.btnCopySku.addEventListener("click", ()=>{
+    copySkuToClipboard();
+  });
+
   els.btnOrder.addEventListener("click", ()=>{
     const attributeResult = buildAttribute116Value();
     if (attributeResult.missing.length){
@@ -2125,6 +2271,10 @@
     const action = actionBtn.dataset.action;
     const model = CONFIG.models[adminState.modelId];
     if (!model) return;
+    if (action === "sku-copy"){
+      copySkuToClipboard();
+      return;
+    }
     if (action === "sku-fixed-toggle"){
       if (adminState.skuEditor && adminState.skuEditor.scope === "fixed"){
         adminState.skuEditor = null;
