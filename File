@@ -355,6 +355,25 @@
     .admin-inline .small{max-width: 180px}
     .admin-inline input[type="checkbox"]{width:auto}
     .admin-help{font-size:12px; color: var(--muted)}
+    .sku-cell{display:flex; flex-direction:column; gap:6px}
+    .sku-summary{font-size:11px; color: var(--muted)}
+    .sku-editor{
+      display:none;
+      padding: 8px;
+      border:1px dashed var(--border);
+      border-radius: 10px;
+      background: #f8f9fd;
+    }
+    .sku-editor.open{display:block}
+    .sku-entry{
+      display:flex;
+      gap:8px;
+      align-items:flex-end;
+      margin-bottom:6px;
+      flex-wrap:wrap;
+    }
+    .sku-entry input[type="number"]{max-width:90px}
+    .sku-entry input[type="text"]{min-width:120px}
   </style>
 </head>
 
@@ -750,7 +769,12 @@
     modelId: "",
     activeGroup: "",
     lastSheetUpdatedAt: "",
-    lastSaveAttempt: ""
+    lastSaveAttempt: "",
+    copySourceModelId: "",
+    copySourceGroupKey: "",
+    copyTargetBehavior: "new",
+    copyTargetGroupKey: "",
+    skuEditor: null
   };
 
   const ADMIN_PASSWORD = "Brompton";
@@ -883,6 +907,9 @@
       if (!model.groups){
         model.groups = {};
       }
+      if (!Array.isArray(model.skuFixedDigits)){
+        model.skuFixedDigits = [];
+      }
       model.groupsOrder.forEach((key) => {
         if (!model.groups[key]){
           model.groups[key] = {
@@ -903,12 +930,36 @@
             model.groups[key].options.forEach((option) => {
               const priority = Number(option.layerPriority);
               option.layerPriority = Number.isFinite(priority) ? Math.trunc(priority) : 0;
+              if (!Array.isArray(option.skuDigits)){
+                option.skuDigits = [];
+              }
             });
           }
         }
       });
     });
     return config;
+  }
+
+  function deepClone(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function getSkuDigitsSummary(list){
+    if (!Array.isArray(list) || list.length === 0) return "No entries";
+    return `${list.length} ${list.length === 1 ? "entry" : "entries"}`;
+  }
+
+  function parseSkuIndex(value){
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return null;
+    const intVal = Math.trunc(parsed);
+    if (intVal < 1) return null;
+    return intVal;
+  }
+
+  function validateSkuValue(value){
+    return typeof value === "string" && value.trim().length > 0;
   }
 
   function setSelectOptions(selectEl, list, placeholder){
@@ -1659,7 +1710,79 @@
       adminState.activeGroup = groupsOrder[0] || "";
     }
 
+    if (!adminState.copySourceModelId || !CONFIG.models[adminState.copySourceModelId]){
+      adminState.copySourceModelId = modelIds[0] || "";
+    }
+    const sourceModel = CONFIG.models[adminState.copySourceModelId];
+    const sourceGroupsOrder = (sourceModel && sourceModel.groupsOrder) ? sourceModel.groupsOrder : [];
+    if (!adminState.copySourceGroupKey || !sourceGroupsOrder.includes(adminState.copySourceGroupKey)){
+      adminState.copySourceGroupKey = sourceGroupsOrder[0] || "";
+    }
+    if (!adminState.copyTargetBehavior){
+      adminState.copyTargetBehavior = "new";
+    }
+    if (!adminState.copyTargetGroupKey){
+      adminState.copyTargetGroupKey = adminState.copySourceGroupKey || "";
+    }
+
+    const fixedDigits = Array.isArray(model.skuFixedDigits) ? model.skuFixedDigits : [];
+    const fixedEditorOpen = adminState.skuEditor && adminState.skuEditor.scope === "fixed";
+
     els.adminGroupsSection.innerHTML = `
+      <div class="line" style="margin-bottom:8px;">
+        <strong>Model Settings</strong>
+      </div>
+      <div class="admin-help" style="margin-bottom:10px;">Manage fixed SKU digits that always apply to this model.</div>
+      <div class="sku-cell" style="margin-bottom:12px;">
+        <button class="primary" data-action="sku-fixed-toggle">Edit Fixed SKU digits</button>
+        <div class="sku-summary">${escapeHtml(getSkuDigitsSummary(fixedDigits))}</div>
+        <div class="sku-editor ${fixedEditorOpen ? "open" : ""}">
+          ${fixedDigits.map((entry, entryIndex) => `
+            <div class="sku-entry" data-entry="${entryIndex}">
+              <label>Index
+                <input type="number" min="1" step="1" value="${Number.isFinite(Number(entry.index)) ? Number(entry.index) : ""}" data-sku-field="fixed-index" data-entry="${entryIndex}">
+              </label>
+              <label>Value
+                <input type="text" value="${escapeHtml(entry.value || "")}" data-sku-field="fixed-value" data-entry="${entryIndex}">
+              </label>
+              <button data-action="sku-fixed-remove" data-entry="${entryIndex}" class="danger">Remove</button>
+            </div>
+          `).join("")}
+          <button data-action="sku-fixed-add">Add digit</button>
+        </div>
+      </div>
+      <div class="hr" style="margin:10px 0;"></div>
+      <div class="line" style="margin-bottom:8px;">
+        <strong>Copy group from another model</strong>
+      </div>
+      <div class="admin-help" style="margin-bottom:10px;">Deep copy a group definition (label, required flag, and all option fields).</div>
+      <div class="admin-inline" style="margin-bottom:10px;">
+        <label>Source model
+          <select id="adminCopySourceModel">
+            ${modelIds.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(CONFIG.models[id].label || id)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Source group
+          <select id="adminCopySourceGroup">
+            ${sourceGroupsOrder.map((key) => `<option value="${escapeHtml(key)}">${escapeHtml(sourceModel?.groups?.[key]?.label || titleCaseFromKey(key))}</option>`).join("")}
+          </select>
+        </label>
+        <label class="small">Target group key
+          <input id="adminCopyTargetKey" type="text" value="${escapeHtml(adminState.copyTargetGroupKey || "")}">
+        </label>
+      </div>
+      <div class="admin-inline" style="margin-bottom:10px;">
+        <label style="flex-direction:row; align-items:center; gap:6px; font-weight:700; color:var(--text);">
+          <input type="radio" name="copyTargetBehavior" value="new" ${adminState.copyTargetBehavior === "new" ? "checked" : ""}>
+          Copy as new group key
+        </label>
+        <label style="flex-direction:row; align-items:center; gap:6px; font-weight:700; color:var(--text);">
+          <input type="radio" name="copyTargetBehavior" value="overwrite" ${adminState.copyTargetBehavior === "overwrite" ? "checked" : ""}>
+          Overwrite existing group key
+        </label>
+        <button class="primary" data-action="group-copy">Copy group</button>
+      </div>
+      <div class="hr" style="margin:10px 0;"></div>
       <div class="line" style="margin-bottom:8px;">
         <strong>Option Groups</strong>
       </div>
@@ -1725,6 +1848,7 @@
               <th>Image URL</th>
               <th style="width:120px;">Layer Priority</th>
               <th style="width:80px;">Enabled</th>
+              <th style="width:220px;">SKU digits</th>
               <th style="width:200px;">Actions</th>
             </tr>
           </thead>
@@ -1737,6 +1861,26 @@
                 <td><input type="text" value="${escapeHtml(opt.imageUrl || "")}" data-field="imageUrl"></td>
                 <td><input type="number" step="1" value="${Number.isFinite(Number(opt.layerPriority)) ? Number(opt.layerPriority) : 0}" data-field="layerPriority"></td>
                 <td style="text-align:center;"><input type="checkbox" ${opt.enabled ? "checked" : ""} data-field="enabled"></td>
+                <td>
+                  <div class="sku-cell">
+                    <button data-action="sku-toggle" data-group="${escapeHtml(activeGroup)}" data-index="${index}" class="primary">Edit</button>
+                    <div class="sku-summary">${escapeHtml(getSkuDigitsSummary(opt.skuDigits))}</div>
+                    <div class="sku-editor ${adminState.skuEditor && adminState.skuEditor.scope === "option" && adminState.skuEditor.groupKey === activeGroup && adminState.skuEditor.optionIndex === index ? "open" : ""}">
+                      ${(Array.isArray(opt.skuDigits) ? opt.skuDigits : []).map((entry, entryIndex) => `
+                        <div class="sku-entry" data-entry="${entryIndex}">
+                          <label>Index
+                            <input type="number" min="1" step="1" value="${Number.isFinite(Number(entry.index)) ? Number(entry.index) : ""}" data-sku-field="index" data-group="${escapeHtml(activeGroup)}" data-index="${index}" data-entry="${entryIndex}">
+                          </label>
+                          <label>Value
+                            <input type="text" value="${escapeHtml(entry.value || "")}" data-sku-field="value" data-group="${escapeHtml(activeGroup)}" data-index="${index}" data-entry="${entryIndex}">
+                          </label>
+                          <button data-action="sku-remove" data-group="${escapeHtml(activeGroup)}" data-index="${index}" data-entry="${entryIndex}" class="danger">Remove</button>
+                        </div>
+                      `).join("")}
+                      <button data-action="sku-add" data-group="${escapeHtml(activeGroup)}" data-index="${index}">Add digit</button>
+                    </div>
+                  </div>
+                </td>
                 <td>
                   <div class="admin-row-actions">
                     <button data-action="option-move-up" ${index === 0 ? "disabled" : ""}>Up</button>
@@ -1756,6 +1900,14 @@
     const adminGroupSelect = document.getElementById("adminGroupSelect");
     if (adminGroupSelect){
       adminGroupSelect.value = activeGroup;
+    }
+    const adminCopySourceModel = document.getElementById("adminCopySourceModel");
+    if (adminCopySourceModel){
+      adminCopySourceModel.value = adminState.copySourceModelId;
+    }
+    const adminCopySourceGroup = document.getElementById("adminCopySourceGroup");
+    if (adminCopySourceGroup){
+      adminCopySourceGroup.value = adminState.copySourceGroupKey;
     }
     updateAdminStatus();
   }
@@ -1973,6 +2125,70 @@
     const action = actionBtn.dataset.action;
     const model = CONFIG.models[adminState.modelId];
     if (!model) return;
+    if (action === "sku-fixed-toggle"){
+      if (adminState.skuEditor && adminState.skuEditor.scope === "fixed"){
+        adminState.skuEditor = null;
+      }else{
+        adminState.skuEditor = { scope: "fixed" };
+      }
+      renderAdmin();
+      return;
+    }
+    if (action === "sku-fixed-add"){
+      model.skuFixedDigits = Array.isArray(model.skuFixedDigits) ? model.skuFixedDigits : [];
+      model.skuFixedDigits.push({ index: 1, value: "X" });
+      adminState.skuEditor = { scope: "fixed" };
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+    if (action === "sku-fixed-remove"){
+      const entryIndex = Number(actionBtn.dataset.entry);
+      model.skuFixedDigits = Array.isArray(model.skuFixedDigits) ? model.skuFixedDigits : [];
+      if (Number.isFinite(entryIndex) && model.skuFixedDigits[entryIndex]){
+        model.skuFixedDigits.splice(entryIndex, 1);
+        adminState.skuEditor = { scope: "fixed" };
+        renderBuyer();
+        renderAdmin();
+      }
+      return;
+    }
+    if (action === "group-copy"){
+      const sourceModelId = adminState.copySourceModelId;
+      const sourceGroupKey = adminState.copySourceGroupKey;
+      const targetBehavior = adminState.copyTargetBehavior || "new";
+      const targetGroupKey = (adminState.copyTargetGroupKey || "").trim();
+      if (!sourceModelId || !CONFIG.models[sourceModelId]){
+        toast("Select a valid source model.");
+        return;
+      }
+      const sourceModel = CONFIG.models[sourceModelId];
+      if (!sourceGroupKey || !sourceModel.groups || !sourceModel.groups[sourceGroupKey]){
+        toast("Select a valid source group.");
+        return;
+      }
+      if (!/^[a-z0-9_-]+$/.test(targetGroupKey)){
+        toast("Target group key must be lowercase letters, numbers, dashes, or underscores.");
+        return;
+      }
+      model.groups = model.groups || {};
+      model.groupsOrder = model.groupsOrder || [];
+      const exists = !!model.groups[targetGroupKey];
+      if (targetBehavior === "new" && exists){
+        toast(`Group key "${targetGroupKey}" already exists. Choose overwrite or a new key.`);
+        return;
+      }
+      const clonedGroup = deepClone(sourceModel.groups[sourceGroupKey]);
+      model.groups[targetGroupKey] = clonedGroup;
+      if (!model.groupsOrder.includes(targetGroupKey)){
+        model.groupsOrder.push(targetGroupKey);
+      }
+      adminState.activeGroup = targetGroupKey;
+      renderBuyer();
+      renderAdmin();
+      toast(`Group "${sourceGroupKey}" copied to "${targetGroupKey}".`);
+      return;
+    }
     if (action === "group-add"){
       const keyInput = document.getElementById("adminNewGroupKey");
       const labelInput = document.getElementById("adminNewGroupLabel");
@@ -2036,6 +2252,10 @@
 
   els.adminGroupsSection.addEventListener("input", (e)=>{
     const input = e.target;
+    if (input && input.id === "adminCopyTargetKey"){
+      adminState.copyTargetGroupKey = input.value.trim();
+      return;
+    }
     const row = input.closest(".admin-group-row");
     if (!row) return;
     const groupKey = row.dataset.group;
@@ -2053,10 +2273,101 @@
     renderBuyer();
   });
 
+  els.adminGroupsSection.addEventListener("change", (e)=>{
+    const target = e.target;
+    const model = CONFIG.models[adminState.modelId];
+    if (!model) return;
+    if (target && target.id === "adminCopySourceModel"){
+      const previousSourceGroup = adminState.copySourceGroupKey;
+      adminState.copySourceModelId = target.value;
+      const sourceModel = CONFIG.models[adminState.copySourceModelId];
+      const sourceGroups = sourceModel?.groupsOrder || [];
+      adminState.copySourceGroupKey = sourceGroups[0] || "";
+      if (!adminState.copyTargetGroupKey || adminState.copyTargetGroupKey === previousSourceGroup){
+        adminState.copyTargetGroupKey = adminState.copySourceGroupKey || "";
+      }
+      renderAdmin();
+      return;
+    }
+    if (target && target.id === "adminCopySourceGroup"){
+      const previousSourceGroup = adminState.copySourceGroupKey;
+      adminState.copySourceGroupKey = target.value;
+      if (!adminState.copyTargetGroupKey || adminState.copyTargetGroupKey === previousSourceGroup){
+        adminState.copyTargetGroupKey = adminState.copySourceGroupKey || "";
+      }
+      renderAdmin();
+      return;
+    }
+    if (target && target.name === "copyTargetBehavior"){
+      adminState.copyTargetBehavior = target.value;
+      return;
+    }
+    if (!target || !target.dataset || !target.dataset.skuField) return;
+    const field = target.dataset.skuField;
+    if (!field.startsWith("fixed-")) return;
+    model.skuFixedDigits = Array.isArray(model.skuFixedDigits) ? model.skuFixedDigits : [];
+    const entryIndex = Number(target.dataset.entry);
+    const entry = model.skuFixedDigits[entryIndex];
+    if (!entry) return;
+    if (field === "fixed-index"){
+      const parsed = parseSkuIndex(target.value);
+      if (parsed === null){
+        toast("SKU index must be an integer of 1 or higher.");
+        target.value = entry.index ?? "";
+        return;
+      }
+      entry.index = parsed;
+    }
+    if (field === "fixed-value"){
+      const value = target.value;
+      if (!validateSkuValue(value)){
+        toast("SKU value must be a non-empty string.");
+        target.value = entry.value ?? "";
+        return;
+      }
+      entry.value = value;
+    }
+    updateAdminStatus();
+    renderBuyer();
+  });
+
   els.adminOptionsSection.addEventListener("change", (e)=>{
-    const select = e.target;
-    if (select && select.id === "adminGroupSelect"){
-      adminState.activeGroup = select.value;
+    const target = e.target;
+    if (target && target.dataset && target.dataset.skuField){
+      const field = target.dataset.skuField;
+      const group = target.dataset.group;
+      const index = Number(target.dataset.index);
+      const entryIndex = Number(target.dataset.entry);
+      const model = CONFIG.models[adminState.modelId];
+      if (!model || !model.groups || !model.groups[group] || !model.groups[group].options[index]) return;
+      const option = model.groups[group].options[index];
+      option.skuDigits = Array.isArray(option.skuDigits) ? option.skuDigits : [];
+      const entry = option.skuDigits[entryIndex];
+      if (!entry) return;
+      if (field === "index"){
+        const parsed = parseSkuIndex(target.value);
+        if (parsed === null){
+          toast("SKU index must be an integer of 1 or higher.");
+          target.value = entry.index ?? "";
+          return;
+        }
+        entry.index = parsed;
+      }
+      if (field === "value"){
+        const value = target.value;
+        if (!validateSkuValue(value)){
+          toast("SKU value must be a non-empty string.");
+          target.value = entry.value ?? "";
+          return;
+        }
+        entry.value = value;
+      }
+      updateAdminStatus();
+      renderBuyer();
+      return;
+    }
+    if (target && target.id === "adminGroupSelect"){
+      adminState.activeGroup = target.value;
       renderAdmin();
     }
   });
@@ -2070,6 +2381,39 @@
     const model = CONFIG.models[adminState.modelId];
     if (!model || !model.groups || !model.groups[group]) return;
     const options = model.groups[group].options || [];
+    if (action === "sku-toggle"){
+      const index = Number(actionBtn.dataset.index);
+      if (adminState.skuEditor && adminState.skuEditor.scope === "option" && adminState.skuEditor.groupKey === group && adminState.skuEditor.optionIndex === index){
+        adminState.skuEditor = null;
+      }else{
+        adminState.skuEditor = { scope: "option", groupKey: group, optionIndex: index };
+      }
+      renderAdmin();
+      return;
+    }
+    if (action === "sku-add"){
+      const index = Number(actionBtn.dataset.index);
+      if (!options[index]) return;
+      options[index].skuDigits = Array.isArray(options[index].skuDigits) ? options[index].skuDigits : [];
+      options[index].skuDigits.push({ index: 1, value: "X" });
+      adminState.skuEditor = { scope: "option", groupKey: group, optionIndex: index };
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
+    if (action === "sku-remove"){
+      const index = Number(actionBtn.dataset.index);
+      const entryIndex = Number(actionBtn.dataset.entry);
+      if (!options[index]) return;
+      options[index].skuDigits = Array.isArray(options[index].skuDigits) ? options[index].skuDigits : [];
+      if (Number.isFinite(entryIndex) && options[index].skuDigits[entryIndex]){
+        options[index].skuDigits.splice(entryIndex, 1);
+        adminState.skuEditor = { scope: "option", groupKey: group, optionIndex: index };
+        renderBuyer();
+        renderAdmin();
+      }
+      return;
+    }
     if (action === "option-add"){
       options.push({
         id: `new-${Date.now()}`,
@@ -2077,7 +2421,8 @@
         price: 0,
         imageUrl: "",
         enabled: true,
-        layerPriority: 0
+        layerPriority: 0,
+        skuDigits: []
       });
       renderBuyer();
       renderAdmin();
