@@ -24,12 +24,12 @@
       color:var(--text);
     }
     .wrap{
-      max-width: 1180px;
+      max-width: 1440px;
       margin: 0 auto;
       padding: 28px 18px 40px;
       display:grid;
-      grid-template-columns: 1.35fr .65fr;
-      gap: 18px;
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+      gap: 20px;
     }
     header{
       grid-column: 1 / -1;
@@ -105,7 +105,7 @@
       overflow:hidden;
     }
     .step .shd{
-      padding: 12px 12px 10px;
+      padding: 10px 10px 8px;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       background: #fafbff;
       border-bottom: 1px solid var(--border);
@@ -124,16 +124,16 @@
       border-color: rgba(31,157,103,.25);
       color:#0f5b3c;
     }
-    .step .shd .name{font-weight: 800; font-size: 13px}
-    .step .shd .meta{font-size:12px; color: var(--muted)}
-    .step .sbd{padding: 12px}
+    .step .shd .name{font-weight: 800; font-size: 12px}
+    .step .shd .meta{font-size:11px; color: var(--muted)}
+    .step .sbd{padding: 10px}
 
     label{
       display:flex;
       flex-direction:column;
-      gap:6px;
+      gap:4px;
       width:100%;
-      font-size:12px;
+      font-size:11px;
       color:var(--muted);
       font-weight:700;
     }
@@ -143,7 +143,7 @@
       border:1px solid var(--border);
       background: #fff;
       color: var(--text);
-      padding: 10px 12px;
+      padding: 8px 10px;
       outline:none;
       font-weight:700;
     }
@@ -156,10 +156,10 @@
       box-shadow: 0 0 0 3px rgba(31,75,255,.12);
     }
 
-    .summary{display:flex; flex-direction:column; gap:12px}
+    .summary{display:flex; flex-direction:column; gap:10px}
     .totals{
       display:flex; flex-direction:column; gap:8px;
-      padding: 12px;
+      padding: 10px 12px;
       background: #f7f8fb;
       border:1px solid var(--border);
       border-radius: 14px;
@@ -168,7 +168,7 @@
     .line strong{font-size: 14px}
     .hr{height:1px; background: var(--border); margin:6px 0}
     .items{
-      padding: 12px;
+      padding: 10px 12px;
       background: #f7f8fb;
       border:1px solid var(--border);
       border-radius: 14px;
@@ -177,13 +177,13 @@
     .items li{margin:6px 0; color:#1d2435}
     .muted{color:var(--muted)}
     .sku-card{
-      padding: 12px;
+      padding: 10px 12px;
       background: #f7f8fb;
       border:1px solid var(--border);
       border-radius: 14px;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:8px;
     }
     .sku-row{
       display:flex;
@@ -238,7 +238,7 @@
     }
 
     .composite-card{
-      padding: 12px;
+      padding: 14px;
       background: #f7f8fb;
       border:1px solid var(--border);
       border-radius: 14px;
@@ -249,8 +249,9 @@
     .composite-preview{
       position: relative;
       width: 100%;
-      max-width: 640px;
+      max-width: none;
       aspect-ratio: 16 / 9;
+      min-height: clamp(260px, 32vw, 520px);
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -295,6 +296,55 @@
     }
     .composite-actions button{
       margin-left:auto;
+    }
+
+    .preview-panel .bd{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap:12px;
+      align-items:start;
+    }
+    .summary-block{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .summary-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .summary-header .h2{font-weight:800; font-size:14px}
+
+    .options-panel{
+      display:flex;
+      flex-direction:column;
+    }
+    .options-panel .bd{
+      padding: 10px 12px 12px;
+      overflow-y:auto;
+      max-height: calc(100vh - 220px);
+    }
+    .options-panel .grid{
+      grid-template-columns: 1fr;
+      gap:10px;
+    }
+    .options-panel .step{border-radius: 12px}
+    .options-panel .pill{font-size: 11px; padding: 4px 8px}
+
+    @media (max-width: 980px){
+      .options-panel .bd{
+        max-height: none;
+      }
+      .summary-grid{
+        grid-template-columns: 1fr;
+      }
     }
 
     .admin-overlay{
@@ -465,58 +515,14 @@
     </header>
 
     <!-- LEFT -->
-    <section class="panel">
+    <section class="panel preview-panel">
       <div class="hd">
-        <div class="h2">Build your bike</div>
+        <div class="h2">Composite preview</div>
         <div class="muted" style="font-size:12px">
-          Adds to cart via Storefront Cart API.
+          Preview builds live as you select options.
         </div>
       </div>
       <div class="bd">
-        <div class="grid" id="stepsGrid"></div>
-      </div>
-    </section>
-
-    <!-- RIGHT -->
-    <aside class="panel">
-      <div class="hd">
-        <div class="h2">Summary</div>
-        <div class="badge" id="validBadge">
-          <span class="dot bad" id="validDot"></span>
-          <span id="validText">Incomplete</span>
-        </div>
-      </div>
-      <div class="bd summary">
-        <div class="totals">
-          <div class="line"><span>Base price</span><strong id="basePrice">—</strong></div>
-          <div class="line"><span>Options</span><strong id="optionsPrice">—</strong></div>
-          <div class="hr"></div>
-          <div class="line"><span>Unit total</span><strong id="unitTotal">—</strong></div>
-          <div class="line"><span>Quantity</span><strong id="qtyDisplay">—</strong></div>
-          <div class="hr"></div>
-          <div class="line"><span>Grand total</span><strong id="grandTotal">—</strong></div>
-        </div>
-
-        <div class="sku-card">
-          <div class="sku-row">
-            <span class="sku-label">SKU:</span>
-            <span class="sku-value" id="skuValue">—</span>
-          </div>
-          <div class="sku-row">
-            <span class="sku-status" id="skuStatus"></span>
-            <button id="btnCopySku" class="primary">Copy SKU</button>
-          </div>
-        </div>
-
-        <div class="items">
-          <div class="line" style="margin-bottom:8px;">
-            <strong>Selected</strong>
-            <span class="muted">Product ID for cart: <b>114</b></span>
-          </div>
-          <ul id="selectionList"></ul>
-          <div class="muted" id="constraintMsg" style="margin-top:10px; font-size:12px;"></div>
-        </div>
-
         <div class="composite-card">
           <div class="line">
             <strong>Composite preview</strong>
@@ -533,10 +539,66 @@
           </div>
         </div>
 
-        <div class="muted" style="font-size:12px; line-height:1.35">
-          If “Order” fails with a message about missing option/variant, it means Product 114 needs a
-          <b>variantId</b> or <b>optionSelections</b> to be added to cart.
+        <div class="summary-grid">
+          <div class="summary-block">
+            <div class="summary-header">
+              <div class="h2">Summary</div>
+              <div class="badge" id="validBadge">
+                <span class="dot bad" id="validDot"></span>
+                <span id="validText">Incomplete</span>
+              </div>
+            </div>
+            <div class="totals">
+              <div class="line"><span>Base price</span><strong id="basePrice">—</strong></div>
+              <div class="line"><span>Options</span><strong id="optionsPrice">—</strong></div>
+              <div class="hr"></div>
+              <div class="line"><span>Unit total</span><strong id="unitTotal">—</strong></div>
+              <div class="line"><span>Quantity</span><strong id="qtyDisplay">—</strong></div>
+              <div class="hr"></div>
+              <div class="line"><span>Grand total</span><strong id="grandTotal">—</strong></div>
+            </div>
+
+            <div class="sku-card">
+              <div class="sku-row">
+                <span class="sku-label">SKU:</span>
+                <span class="sku-value" id="skuValue">—</span>
+              </div>
+              <div class="sku-row">
+                <span class="sku-status" id="skuStatus"></span>
+                <button id="btnCopySku" class="primary">Copy SKU</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-block">
+            <div class="items">
+              <div class="line" style="margin-bottom:8px;">
+                <strong>Selected</strong>
+                <span class="muted">Product ID for cart: <b>114</b></span>
+              </div>
+              <ul id="selectionList"></ul>
+              <div class="muted" id="constraintMsg" style="margin-top:10px; font-size:12px;"></div>
+            </div>
+
+            <div class="muted" style="font-size:12px; line-height:1.35">
+              If “Order” fails with a message about missing option/variant, it means Product 114 needs a
+              <b>variantId</b> or <b>optionSelections</b> to be added to cart.
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="panel options-panel">
+      <div class="hd">
+        <div class="h2">Build your bike</div>
+        <div class="muted" style="font-size:12px">
+          Adds to cart via Storefront Cart API.
+        </div>
+      </div>
+      <div class="bd">
+        <div class="grid" id="stepsGrid"></div>
       </div>
     </aside>
   </div>
