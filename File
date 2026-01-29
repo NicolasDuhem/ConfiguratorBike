@@ -928,6 +928,7 @@
 
   const DEFAULT_SKU_LENGTH = 30;
   const SKU_PLACEHOLDER = "_";
+  const DEFAULT_IMAGE_CROP = Object.freeze({ x: 0.5, y: 0.5, zoom: 1 });
 
   // =========================
   // DEFAULT CONFIG (fallback)
@@ -1257,7 +1258,6 @@
   };
 
   const DEFAULT_GROUP_ORDER = ["colors", "gearing", "rack", "lights"];
-  const DEFAULT_IMAGE_CROP = { x: 0.5, y: 0.5, zoom: 1 };
 
   function getForcedModelFromPath(){
     const rawPath = (window.location.pathname || "").toLowerCase();
@@ -1387,23 +1387,26 @@
   }
 
   function clamp01(value){
-    return Math.min(1, Math.max(0, value));
+    const num = Number(value);
+    if (!Number.isFinite(num)) return NaN;
+    return Math.min(1, Math.max(0, num));
   }
 
   function normalizeImageCrop(crop){
-    const raw = crop && typeof crop === "object" ? crop : {};
-    const x = Number(raw.x);
-    const y = Number(raw.y);
-    const zoom = Number(raw.zoom);
+    const d = { x: 0.5, y: 0.5, zoom: 1 };
+    const c = crop && typeof crop === "object" ? crop : {};
+    const x = clamp01(Number(c.x));
+    const y = clamp01(Number(c.y));
+    const z = Number(c.zoom);
     return {
-      x: Number.isFinite(x) ? clamp01(x) : DEFAULT_IMAGE_CROP.x,
-      y: Number.isFinite(y) ? clamp01(y) : DEFAULT_IMAGE_CROP.y,
-      zoom: Number.isFinite(zoom) && zoom >= 1 ? zoom : DEFAULT_IMAGE_CROP.zoom
+      x: Number.isFinite(x) ? x : d.x,
+      y: Number.isFinite(y) ? y : d.y,
+      zoom: Number.isFinite(z) && z >= 1 ? z : d.zoom
     };
   }
 
   function updateImageCrop(option, updates){
-    if (!option) return DEFAULT_IMAGE_CROP;
+    if (!option) return normalizeImageCrop();
     const next = normalizeImageCrop({ ...(option.imageCrop || {}), ...(updates || {}) });
     option.imageCrop = next;
     return next;
@@ -2089,7 +2092,18 @@
 
   async function loadConfigFromSheet(useFallbackOnError){
     try{
-      CONFIG = normalizeConfig(await fetchConfigFromSheet());
+      const sheetConfig = await fetchConfigFromSheet();
+      try{
+        CONFIG = normalizeConfig(sheetConfig);
+      }catch(err){
+        console.error("Config normalize failed", err);
+        CONFIG = normalizeConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+        reconcileSelections();
+        renderBuyer();
+        renderAdmin();
+        toast("Config load failed; using local defaults.");
+        return false;
+      }
       reconcileSelections();
       renderBuyer();
       renderAdmin();
@@ -2102,7 +2116,7 @@
         reconcileSelections();
         renderBuyer();
         renderAdmin();
-        toast("Using local defaults (config API unavailable)");
+        toast("Config load failed; using local defaults.");
       }else{
         const message = err && err.message ? err.message : "Unknown error";
         toast(`Failed to load sheet config: ${message}`);
@@ -2981,7 +2995,18 @@
 
   async function refreshConfigFromSheet(){
     try{
-      CONFIG = normalizeConfig(await fetchConfigFromSheet());
+      const sheetConfig = await fetchConfigFromSheet();
+      try{
+        CONFIG = normalizeConfig(sheetConfig);
+      }catch(err){
+        console.error("Config normalize failed", err);
+        CONFIG = normalizeConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+        reconcileSelections();
+        renderBuyer();
+        renderAdmin();
+        toast("Config load failed; using local defaults.");
+        return false;
+      }
       reconcileSelections();
       renderBuyer();
       renderAdmin();
