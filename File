@@ -271,19 +271,25 @@
       opacity:.75;
     }
     .option-thumb{
+      display:block;
+      width:100%;
+    }
+    .option-thumb-viewport{
       background:#fff;
       border:1px solid var(--border);
       border-radius: 10px;
       height: 96px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
       overflow:hidden;
+      position:relative;
     }
-    .option-thumb img{
+    .option-thumb-viewport img{
+      position:absolute;
+      left:50%;
+      top:50%;
       width:100%;
       height:100%;
       object-fit:contain;
+      transform-origin:center;
       display:block;
     }
     .option-title{
@@ -707,6 +713,46 @@
     }
     .sku-entry input[type="number"]{max-width:90px}
     .sku-entry input[type="text"]{min-width:120px}
+    .crop-controls{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .crop-row{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:6px;
+    }
+    .crop-row label{font-size:11px}
+    .crop-row input{width:100%}
+    .crop-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .crop-actions button{
+      padding:4px 6px;
+      font-size:11px;
+    }
+    .crop-preview{
+      height: 78px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius: 10px;
+      overflow:hidden;
+      position:relative;
+      cursor: crosshair;
+    }
+    .crop-preview img{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      transform-origin:center;
+    }
   </style>
 </head>
 
@@ -1211,6 +1257,7 @@
   };
 
   const DEFAULT_GROUP_ORDER = ["colors", "gearing", "rack", "lights"];
+  const DEFAULT_IMAGE_CROP = { x: 0.5, y: 0.5, zoom: 1 };
 
   function getForcedModelFromPath(){
     const rawPath = (window.location.pathname || "").toLowerCase();
@@ -1309,6 +1356,7 @@
               if (!Array.isArray(option.skuDigits)){
                 option.skuDigits = [];
               }
+              option.imageCrop = normalizeImageCrop(option.imageCrop);
             });
           }
         }
@@ -1336,6 +1384,36 @@
       });
     });
     return config;
+  }
+
+  function clamp01(value){
+    return Math.min(1, Math.max(0, value));
+  }
+
+  function normalizeImageCrop(crop){
+    const raw = crop && typeof crop === "object" ? crop : {};
+    const x = Number(raw.x);
+    const y = Number(raw.y);
+    const zoom = Number(raw.zoom);
+    return {
+      x: Number.isFinite(x) ? clamp01(x) : DEFAULT_IMAGE_CROP.x,
+      y: Number.isFinite(y) ? clamp01(y) : DEFAULT_IMAGE_CROP.y,
+      zoom: Number.isFinite(zoom) && zoom >= 1 ? zoom : DEFAULT_IMAGE_CROP.zoom
+    };
+  }
+
+  function updateImageCrop(option, updates){
+    if (!option) return DEFAULT_IMAGE_CROP;
+    const next = normalizeImageCrop({ ...(option.imageCrop || {}), ...(updates || {}) });
+    option.imageCrop = next;
+    return next;
+  }
+
+  function getCropTransform(crop){
+    const safe = normalizeImageCrop(crop);
+    const translateX = (0.5 - safe.x) * 100;
+    const translateY = (0.5 - safe.y) * 100;
+    return `translate(${translateX}%, ${translateY}%) scale(${safe.zoom}) translate(-50%, -50%)`;
   }
 
   function deepClone(obj){
@@ -1882,7 +1960,20 @@
   }
 
   function exportConfig(){
-    return JSON.stringify(CONFIG, null, 2);
+    const exportPayload = {
+      exportVersion: 1,
+      timestamp: new Date().toISOString(),
+      config: CONFIG,
+      state: {
+        modelId: state.modelId,
+        selections: { ...state.selections },
+        qty: state.qty,
+        notes: state.notes,
+        openGroupKey: state.openGroupKey,
+        collapseAll: state.collapseAll
+      }
+    };
+    return JSON.stringify(exportPayload, null, 2);
   }
 
   function getConfigSize(){
@@ -2223,8 +2314,9 @@
         const priceLabel = opt.price ? `+${money(opt.price)}` : money(0);
         const priceClass = opt.price ? "" : "hidden";
         const lockedAttr = groupState.fixed ? "disabled" : "";
+        const crop = normalizeImageCrop(opt.imageCrop);
         const imgMarkup = opt.imageUrl
-          ? `<img src="${escapeHtml(opt.imageUrl)}" alt="${escapeHtml(opt.label)}" loading="lazy" />`
+          ? `<img src="${escapeHtml(opt.imageUrl)}" alt="${escapeHtml(opt.label)}" loading="lazy" style="transform:${getCropTransform(crop)};" />`
           : `<span class="muted" style="font-size:11px;">No image</span>`;
         return `
           <button class="option-card ${isSelected ? "selected" : ""} ${groupState.fixed ? "locked" : ""}"
@@ -2235,7 +2327,9 @@
             ${lockedAttr}>
             ${groupState.fixed ? `<span class="option-lock">Only option</span>` : ""}
             <span class="option-check">✓</span>
-            <div class="option-thumb">${imgMarkup}</div>
+            <div class="option-thumb">
+              <div class="option-thumb-viewport">${imgMarkup}</div>
+            </div>
             <div class="option-title">${escapeHtml(opt.label)}</div>
             <span class="price-badge ${priceClass}">${escapeHtml(priceLabel)}</span>
           </button>
@@ -2487,12 +2581,16 @@
               <th>Image URL</th>
               <th style="width:120px;">Layer Priority</th>
               <th style="width:80px;">Enabled</th>
+              <th style="width:240px;">Image Crop</th>
               <th style="width:220px;">SKU digits</th>
               <th style="width:200px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${activeOptions.map((opt, index) => `
+              ${(() => {
+                const crop = normalizeImageCrop(opt.imageCrop);
+                return `
               <tr data-index="${index}" data-group="${escapeHtml(activeGroup)}">
                 <td><input type="text" value="${escapeHtml(opt.id)}" data-field="id"></td>
                 <td><input type="text" value="${escapeHtml(opt.label)}" data-field="label"></td>
@@ -2500,6 +2598,29 @@
                 <td><input type="text" value="${escapeHtml(opt.imageUrl || "")}" data-field="imageUrl"></td>
                 <td><input type="number" step="1" value="${Number.isFinite(Number(opt.layerPriority)) ? Number(opt.layerPriority) : 0}" data-field="layerPriority"></td>
                 <td style="text-align:center;"><input type="checkbox" ${opt.enabled ? "checked" : ""} data-field="enabled"></td>
+                <td>
+                  <div class="crop-controls">
+                    <div class="crop-row">
+                      <label>X
+                        <input type="number" min="0" max="1" step="0.01" value="${crop.x}" data-field="cropX">
+                      </label>
+                      <label>Y
+                        <input type="number" min="0" max="1" step="0.01" value="${crop.y}" data-field="cropY">
+                      </label>
+                      <label>Zoom
+                        <input type="number" min="1" step="0.05" value="${crop.zoom}" data-field="cropZoom">
+                      </label>
+                    </div>
+                    <div class="crop-actions">
+                      <button type="button" data-action="crop-center">Center</button>
+                      <button type="button" data-action="crop-zoom-in">+</button>
+                      <button type="button" data-action="crop-zoom-out">-</button>
+                    </div>
+                    <div class="crop-preview" title="Click to set crop center">
+                      ${opt.imageUrl ? `<img src="${escapeHtml(opt.imageUrl)}" alt="${escapeHtml(opt.label)}" style="transform:${getCropTransform(crop)};" />` : ""}
+                    </div>
+                  </div>
+                </td>
                 <td>
                   <div class="sku-cell">
                     <button data-action="sku-toggle" data-group="${escapeHtml(activeGroup)}" data-index="${index}" class="primary">Edit</button>
@@ -2530,6 +2651,8 @@
                   </div>
                 </td>
               </tr>
+              `;
+              })()}
             `).join("")}
           </tbody>
         </table>
@@ -3196,6 +3319,25 @@
       }
       return;
     }
+    if (action === "crop-center" || action === "crop-zoom-in" || action === "crop-zoom-out"){
+      const row = actionBtn.closest("tr");
+      const index = row ? Number(row.dataset.index) : -1;
+      if (index < 0 || !options[index]) return;
+      const option = options[index];
+      const current = normalizeImageCrop(option.imageCrop);
+      if (action === "crop-center"){
+        updateImageCrop(option, { x: 0.5, y: 0.5 });
+      }
+      if (action === "crop-zoom-in"){
+        updateImageCrop(option, { zoom: current.zoom + 0.25 });
+      }
+      if (action === "crop-zoom-out"){
+        updateImageCrop(option, { zoom: Math.max(1, current.zoom - 0.25) });
+      }
+      renderBuyer();
+      renderAdmin();
+      return;
+    }
     if (action === "option-add"){
       options.push({
         id: `new-${Date.now()}`,
@@ -3204,7 +3346,8 @@
         imageUrl: "",
         enabled: true,
         layerPriority: 0,
-        skuDigits: []
+        skuDigits: [],
+        imageCrop: { ...DEFAULT_IMAGE_CROP }
       });
       renderBuyer();
       renderAdmin();
@@ -3255,9 +3398,44 @@
       option.label = input.value;
     }else if (field === "imageUrl"){
       option.imageUrl = input.value.trim();
+    }else if (field === "cropX" || field === "cropY" || field === "cropZoom"){
+      const updates = {};
+      if (field === "cropX"){
+        updates.x = Number(input.value);
+      }
+      if (field === "cropY"){
+        updates.y = Number(input.value);
+      }
+      if (field === "cropZoom"){
+        updates.zoom = Number(input.value);
+      }
+      const crop = updateImageCrop(option, updates);
+      const previewImg = row.querySelector(".crop-preview img");
+      if (previewImg){
+        previewImg.style.transform = getCropTransform(crop);
+      }
     }
     updateAdminStatus();
     renderBuyer();
+  });
+
+  els.adminOptionsSection.addEventListener("click", (e)=>{
+    const preview = e.target.closest(".crop-preview");
+    if (!preview) return;
+    const row = preview.closest("tr");
+    if (!row) return;
+    const group = row.dataset.group;
+    const index = Number(row.dataset.index);
+    const model = CONFIG.models[adminState.modelId];
+    if (!model || !model.groups || !model.groups[group] || !model.groups[group].options[index]) return;
+    const option = model.groups[group].options[index];
+    const rect = preview.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    updateImageCrop(option, { x, y });
+    renderBuyer();
+    renderAdmin();
   });
 
   els.adminComboLayersSection.addEventListener("click", (e)=>{
