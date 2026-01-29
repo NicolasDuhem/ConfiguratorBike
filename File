@@ -24,12 +24,12 @@
       color:var(--text);
     }
     .wrap{
-      max-width: 1440px;
+      max-width: 1680px;
       margin: 0 auto;
       padding: 28px 18px 40px;
       display:grid;
-      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
-      gap: 20px;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.2fr) minmax(260px, 0.9fr);
+      gap: 18px;
     }
     header{
       grid-column: 1 / -1;
@@ -127,6 +127,235 @@
     .step .shd .name{font-weight: 800; font-size: 12px}
     .step .shd .meta{font-size:11px; color: var(--muted)}
     .step .sbd{padding: 10px}
+
+    .options-panel .bd{
+      padding: 12px;
+      max-height: calc(100vh - 190px);
+      overflow-y: auto;
+    }
+
+    .summary-panel .bd{
+      padding: 0;
+    }
+    .summary-sticky{
+      position: sticky;
+      top: 20px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .accordion-toolbar{
+      display:flex;
+      justify-content:flex-end;
+      margin-bottom: 8px;
+      font-size:12px;
+    }
+    .accordion-toolbar button{
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      box-shadow:none;
+    }
+    .accordion-section{
+      border:1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      overflow:hidden;
+      margin-bottom: 10px;
+    }
+    .accordion-header{
+      width:100%;
+      border:0;
+      padding: 10px 12px;
+      background: #fafbff;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+      text-align:left;
+      font-weight:700;
+      box-shadow:none;
+    }
+    .accordion-header:hover{background:#f4f6ff}
+    .accordion-index{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      background: rgba(31,75,255,.12);
+      border:1px solid rgba(31,75,255,.25);
+      color:#1f2d6a;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:800;
+      flex:0 0 auto;
+    }
+    .accordion-index.ok{
+      background: rgba(31,157,103,.12);
+      border-color: rgba(31,157,103,.25);
+      color:#0f5b3c;
+    }
+    .accordion-meta{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .accordion-meta .name{
+      font-size:12px;
+      font-weight:800;
+    }
+    .accordion-meta .sub{
+      font-size:11px;
+      color:var(--muted);
+    }
+    .accordion-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:11px;
+      color:var(--muted);
+    }
+    .required-badge{
+      background: rgba(214,69,80,.12);
+      color:#91202a;
+      border:1px solid rgba(214,69,80,.25);
+      padding: 4px 6px;
+      border-radius: 999px;
+      font-weight:800;
+      font-size:10px;
+    }
+    .accordion-chevron{
+      font-size:16px;
+      color:var(--muted);
+      transition: transform .2s ease;
+    }
+    .accordion-section[data-open="true"] .accordion-chevron{transform: rotate(180deg);}
+    .accordion-body{
+      display:none;
+      padding: 12px;
+      border-top:1px solid var(--border);
+      background: #fff;
+    }
+    .accordion-section[data-open="true"] .accordion-body{display:block;}
+    .options-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap:10px;
+    }
+    .option-card{
+      border:1px solid var(--border);
+      border-radius: 12px;
+      background:#fff;
+      padding: 8px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      cursor:pointer;
+      min-height: 140px;
+      position:relative;
+      font-weight:700;
+      font-size:12px;
+      box-shadow: 0 4px 12px rgba(15,23,42,.06);
+      transition: border .2s ease, transform .1s ease;
+    }
+    .option-card:hover{border-color: rgba(31,75,255,.35);}
+    .option-card.selected{
+      border-color: rgba(31,75,255,.8);
+      box-shadow: 0 0 0 2px rgba(31,75,255,.15);
+    }
+    .option-card.locked{
+      cursor:not-allowed;
+      opacity:.75;
+    }
+    .option-thumb{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius: 10px;
+      height: 96px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .option-thumb img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+    }
+    .option-title{
+      font-size:12px;
+      color:var(--text);
+      min-height: 28px;
+    }
+    .price-badge{
+      align-self:flex-start;
+      background: rgba(31,75,255,.12);
+      color:#1f2d6a;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size:10px;
+      font-weight:800;
+      border:1px solid rgba(31,75,255,.2);
+    }
+    .price-badge.hidden{display:none;}
+    .option-check{
+      position:absolute;
+      top:8px;
+      right:8px;
+      background: rgba(31,75,255,.9);
+      color:#fff;
+      width:20px;
+      height:20px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:800;
+      opacity:0;
+      transform: scale(.9);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .option-card.selected .option-check{
+      opacity:1;
+      transform: scale(1);
+    }
+    .option-lock{
+      position:absolute;
+      top:8px;
+      left:8px;
+      background: rgba(16,18,24,.08);
+      color: var(--muted);
+      font-size:10px;
+      font-weight:800;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+    }
+    .next-group{
+      margin-top:12px;
+      width:100%;
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+    }
+    .next-group button{
+      padding: 6px 10px;
+      font-size:12px;
+    }
+
+    @media (max-width: 980px){
+      .options-panel .bd{
+        max-height: unset;
+      }
+      .summary-sticky{
+        position: static;
+      }
+    }
 
     label{
       display:flex;
@@ -303,12 +532,6 @@
       flex-direction:column;
       gap:14px;
     }
-    .summary-grid{
-      display:grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap:12px;
-      align-items:start;
-    }
     .summary-block{
       display:flex;
       flex-direction:column;
@@ -326,15 +549,6 @@
       display:flex;
       flex-direction:column;
     }
-    .options-panel .bd{
-      padding: 10px 12px 12px;
-      overflow-y:auto;
-      max-height: calc(100vh - 220px);
-    }
-    .options-panel .grid{
-      grid-template-columns: 1fr;
-      gap:10px;
-    }
     .options-panel .step{border-radius: 12px}
     .options-panel .pill{font-size: 11px; padding: 4px 8px}
 
@@ -342,8 +556,8 @@
       .options-panel .bd{
         max-height: none;
       }
-      .summary-grid{
-        grid-template-columns: 1fr;
+      .summary-sticky{
+        position: static;
       }
     }
 
@@ -538,16 +752,34 @@
             <button id="btnDownloadComposite" class="primary">Download composite (1920×1080)</button>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="summary-grid">
+    <!-- MIDDLE -->
+    <aside class="panel options-panel">
+      <div class="hd">
+        <div class="h2">Build your bike</div>
+        <div class="muted" style="font-size:12px">
+          Adds to cart via Storefront Cart API.
+        </div>
+      </div>
+      <div class="bd">
+        <div class="accordion-list" id="stepsGrid"></div>
+      </div>
+    </aside>
+
+    <!-- RIGHT -->
+    <aside class="panel summary-panel">
+      <div class="hd">
+        <div class="h2">Summary</div>
+        <div class="badge" id="validBadge">
+          <span class="dot bad" id="validDot"></span>
+          <span id="validText">Incomplete</span>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="summary-sticky">
           <div class="summary-block">
-            <div class="summary-header">
-              <div class="h2">Summary</div>
-              <div class="badge" id="validBadge">
-                <span class="dot bad" id="validDot"></span>
-                <span id="validText">Incomplete</span>
-              </div>
-            </div>
             <div class="totals">
               <div class="line"><span>Base price</span><strong id="basePrice">—</strong></div>
               <div class="line"><span>Options</span><strong id="optionsPrice">—</strong></div>
@@ -586,19 +818,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- RIGHT -->
-    <aside class="panel options-panel">
-      <div class="hd">
-        <div class="h2">Build your bike</div>
-        <div class="muted" style="font-size:12px">
-          Adds to cart via Storefront Cart API.
-        </div>
-      </div>
-      <div class="bd">
-        <div class="grid" id="stepsGrid"></div>
       </div>
     </aside>
   </div>
@@ -907,7 +1126,9 @@
     modelId: "",
     selections: {},
     qty: 1,
-    notes: ""
+    notes: "",
+    openGroupKey: "",
+    collapseAll: false
   };
 
   const adminState = {
@@ -1631,6 +1852,8 @@
       }
       state.qty = normalizeQty(obj.qty || 1);
       state.notes = obj.notes || "";
+      state.openGroupKey = obj.openGroupKey || "";
+      state.collapseAll = !!obj.collapseAll;
       if (forcedModelId){
         if (state.modelId !== forcedModelId){
           state.selections = {};
@@ -1949,66 +2172,105 @@
     els.btnOrder.disabled = !v.ok;
 
     const steps = [];
-    let stepNumber = 1;
+    const groups = v.groups || [];
+    const groupKeys = groups.map(item => item.key);
+    if (!state.collapseAll){
+      if (!state.openGroupKey || !groupKeys.includes(state.openGroupKey)){
+        const firstIncomplete = groups.find(item => !item.isComplete);
+        state.openGroupKey = (firstIncomplete ? firstIncomplete.key : groupKeys[0]) || "";
+      }
+    }else if (state.openGroupKey && !groupKeys.includes(state.openGroupKey)){
+      state.openGroupKey = "";
+    }
+
     const modelLabel = v.model ? v.model.label : "";
-    const modelMeta = modelLabel ? modelLabel : "Choose a base model";
     steps.push(`
       <div class="step">
         <div class="shd">
-          <span class="pill ok">${stepNumber}</span>
+          <span class="pill ok">1</span>
           <div style="flex:1">
             <div class="name">Model</div>
-            <div class="meta">${escapeHtml(modelMeta)}</div>
+            <div class="meta">${escapeHtml(modelLabel || "Invalid route")}</div>
           </div>
-          <div class="meta">—</div>
+          <div class="meta">${escapeHtml(modelLabel ? "Locked" : "—")}</div>
         </div>
         <div class="sbd">
-          <label>Model
-            <select data-role="model" disabled>
-              ${v.model ? `<option value="${escapeHtml(state.modelId)}">${escapeHtml(v.model.label)}</option>` : `<option value="">Invalid route</option>`}
-            </select>
-          </label>
+          <div class="muted" style="font-size:12px;">This configurator is fixed to the ${escapeHtml(modelLabel || "selected")} model.</div>
         </div>
       </div>
     `);
-    stepNumber += 1;
 
-    (v.groups || []).forEach((groupState) => {
+    if (groups.length){
+      steps.push(`
+        <div class="accordion-toolbar">
+          <button type="button" data-action="collapse-all">Collapse all</button>
+        </div>
+      `);
+    }
+
+    groups.forEach((groupState, index) => {
       const group = groupState.group;
       const label = group.label || titleCaseFromKey(groupState.key);
       const selected = groupState.selectedOption;
-      const metaText = selected ? selected.label : (groupState.required ? `Select ${label.toLowerCase()}` : "Optional");
+      const selectedLabel = selected ? selected.label : "Not selected";
+      const metaText = groupState.fixed ? `${selectedLabel} (only option)` : selectedLabel;
       const priceText = selected ? (selected.price ? `+${money(selected.price)}` : money(0)) : "—";
       const showOk = groupState.isComplete;
-      const selectOptions = buildOptionOptions(groupState.enabled, groupState.selectedId, `Select ${label.toLowerCase()}…`, !groupState.fixed);
-      const fixedAttr = groupState.fixed ? "data-fixed=\"true\"" : "data-fixed=\"false\"";
-      const disabledAttr = groupState.disabled ? "disabled" : "";
+      const requiredBadge = groupState.required && !groupState.selectedId ? `<span class="required-badge">Required</span>` : "";
+      const isOpen = state.openGroupKey === groupState.key && !state.collapseAll;
+      const optionCards = groupState.enabled.map((opt) => {
+        const isSelected = opt.id === groupState.selectedId;
+        const priceLabel = opt.price ? `+${money(opt.price)}` : money(0);
+        const priceClass = opt.price ? "" : "hidden";
+        const lockedAttr = groupState.fixed ? "disabled" : "";
+        const imgMarkup = opt.imageUrl
+          ? `<img src="${escapeHtml(opt.imageUrl)}" alt="${escapeHtml(opt.label)}" loading="lazy" />`
+          : `<span class="muted" style="font-size:11px;">No image</span>`;
+        return `
+          <button class="option-card ${isSelected ? "selected" : ""} ${groupState.fixed ? "locked" : ""}"
+            type="button"
+            data-action="select-option"
+            data-group="${escapeHtml(groupState.key)}"
+            data-option="${escapeHtml(opt.id)}"
+            ${lockedAttr}>
+            ${groupState.fixed ? `<span class="option-lock">Only option</span>` : ""}
+            <span class="option-check">✓</span>
+            <div class="option-thumb">${imgMarkup}</div>
+            <div class="option-title">${escapeHtml(opt.label)}</div>
+            <span class="price-badge ${priceClass}">${escapeHtml(priceLabel)}</span>
+          </button>
+        `;
+      }).join("");
+      const nextGroupKey = groupKeys[index + 1] || "";
+      const nextButton = nextGroupKey
+        ? `<button type="button" data-action="next-group" data-next="${escapeHtml(nextGroupKey)}">Next</button>`
+        : "";
       steps.push(`
-        <div class="step">
-          <div class="shd">
-            <span class="pill ${showOk ? "ok" : ""}">${stepNumber}</span>
-            <div style="flex:1">
+        <div class="accordion-section" data-open="${isOpen ? "true" : "false"}">
+          <button class="accordion-header" type="button" data-action="toggle" data-group="${escapeHtml(groupState.key)}">
+            <span class="accordion-index ${showOk ? "ok" : ""}">${index + 2}</span>
+            <div class="accordion-meta">
               <div class="name">${escapeHtml(label)}</div>
-              <div class="meta">${escapeHtml(metaWithFixed(selected ? selected.label : "", metaText, { dataset: { fixed: groupState.fixed ? "true" : "false" } }))}</div>
+              <div class="sub">${escapeHtml(metaText)}</div>
             </div>
-            <div class="meta">${escapeHtml(priceText)}</div>
-          </div>
-          <div class="sbd">
-            <label>${escapeHtml(label)}
-              <select data-group="${escapeHtml(groupState.key)}" ${fixedAttr} ${disabledAttr}>
-                ${selectOptions}
-              </select>
-            </label>
+            <div class="accordion-actions">
+              ${requiredBadge}
+              <span>${escapeHtml(priceText)}</span>
+              <span class="accordion-chevron">▾</span>
+            </div>
+          </button>
+          <div class="accordion-body">
+            <div class="options-grid">${optionCards || `<div class="muted" style="font-size:12px;">No options available.</div>`}</div>
+            <div class="next-group">${nextButton}</div>
           </div>
         </div>
       `);
-      stepNumber += 1;
     });
 
     steps.push(`
       <div class="step">
         <div class="shd">
-          <span class="pill ok">${stepNumber}</span>
+          <span class="pill ok">${groups.length + 2}</span>
           <div style="flex:1">
             <div class="name">Quantity</div>
             <div class="meta">How many bikes</div>
@@ -2458,12 +2720,42 @@
   // =========================
   // EVENTS
   // =========================
-  els.stepsGrid.addEventListener("change", (e)=>{
-    const select = e.target.closest("select");
-    if (!select) return;
-    const groupKey = select.dataset.group;
-    if (groupKey){
-      state.selections[groupKey] = select.value;
+  els.stepsGrid.addEventListener("click", (e)=>{
+    const actionEl = e.target.closest("[data-action]");
+    if (!actionEl) return;
+    const action = actionEl.dataset.action;
+    if (action === "toggle"){
+      const groupKey = actionEl.dataset.group;
+      if (!groupKey) return;
+      if (state.openGroupKey === groupKey && !state.collapseAll){
+        state.openGroupKey = "";
+        state.collapseAll = true;
+      }else{
+        state.openGroupKey = groupKey;
+        state.collapseAll = false;
+      }
+      renderBuyer();
+      return;
+    }
+    if (action === "collapse-all"){
+      state.openGroupKey = "";
+      state.collapseAll = true;
+      renderBuyer();
+      return;
+    }
+    if (action === "next-group"){
+      const nextKey = actionEl.dataset.next || "";
+      state.openGroupKey = nextKey;
+      state.collapseAll = false;
+      renderBuyer();
+      return;
+    }
+    if (action === "select-option"){
+      const groupKey = actionEl.dataset.group;
+      const optionId = actionEl.dataset.option;
+      if (!groupKey || !optionId) return;
+      state.selections[groupKey] = optionId;
+      state.collapseAll = false;
       renderBuyer();
     }
   });
@@ -2485,6 +2777,8 @@
     state.selections = {};
     state.qty = 1;
     state.notes = "";
+    state.openGroupKey = "";
+    state.collapseAll = false;
     renderBuyer();
     toast("Reset complete.");
   });
